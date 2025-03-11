@@ -5,8 +5,8 @@ function App() {
   return (
     <Routes>
       {/*Auth Routes */}
-      <Route path="/" element={<Login />} />
-      {/*  <Route path='/register' element={}/>*/}
+      <Route path="/" element={<Register />} />
+      <Route path='/login' element={<Login/>}/>
       {/*Auth Routes */}
 
       {/*Admin Routes */}
