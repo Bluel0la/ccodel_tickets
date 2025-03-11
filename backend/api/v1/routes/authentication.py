@@ -11,7 +11,7 @@ import os
 from api.v1.models.revoked_tokens import RevokedToken
 from api.v1.models.refresh_tokens import RefreshToken
 from jose import jwt, JWTError
-from datetime import timedelta
+from datetime import timedelta, timezone, datetime
 
 load_dotenv(".env")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -118,7 +118,9 @@ def logout(
         raise HTTPException(status_code=400, detail="Token already revoked")
 
     # Store the token in the RevokedToken table
-    revoked_token = RevokedToken(token=token, expires_at=decoded_token.get("exp"))
+    revoked_token = RevokedToken(
+    token=token, 
+    expires_at=datetime.fromtimestamp(decoded_token.get("exp"), tz=timezone.utc))
     db.add(revoked_token)
     db.commit()
 
