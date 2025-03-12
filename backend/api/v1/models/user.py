@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Enum, UUID
+from sqlalchemy import Column, String, Enum, UUID, Boolean
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -14,7 +14,11 @@ class User(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     username = Column(String(255), unique=True, nullable=False)
-    gender = Column(Enum("Male", "Female", "Other", name="gender_enum"))
-    is_active = Column(Boolean, default=True)
+    role = Column(Enum("admin", "support", "user", name="role_enum"), nullable=False)
+    school_role = Column(Enum("faculty", "staff", "student", name="school_role_enum"), nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)  # ✅ Added is_active column
 
-    
+    tickets_assigned = relationship("Ticket", back_populates="assigned_to_user", foreign_keys="Ticket.assigned_to")
+    tickets_created = relationship("Ticket", back_populates="assigned_by_user", foreign_keys="Ticket.assigned_by")
+    tickets_closed = relationship("Ticket", back_populates="closed_by_user", foreign_keys="Ticket.closed_by")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
