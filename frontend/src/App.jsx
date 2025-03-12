@@ -2,11 +2,12 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Dashboard from "./pages/student/Dashboard";
+import DashContainer from "./pages/__test__/DashContainer";
 function App() {
   return (
     <Routes>
       {/*Auth Routes */}
-      <Route path="/" element={<Register />} />
+      <Route path="/" element={<DashContainer />} />
       <Route path='/login' element={<Login/>}/>
       {/*Auth Routes */}
 
