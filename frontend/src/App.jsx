@@ -7,9 +7,17 @@ import DashContainer from "./pages/__test__/DashContainer";
 function App() {
   return (
     <Routes>
-      {/*Auth Routes */}
+      {/*Auth Routes  I'm testing here, don't be scared*/}
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
+      <Route path='/reg' element={<Register/>}/>
+      <Route path='/regis' element={<Register/>}/>
+      <Route path='/r' element={<Register/>}/>
+      <Route path='/re' element={<Register/>}/>
+      <Route path='/regi' element={<Register/>}/>
+      <Route path='/ster' element={<Register/>}/>
+      <Route path='/er' element={<Register/>}/>
+      <Route path='/ter' element={<Register/>}/>
       {/*Auth Routes */}
 
       {/*Admin Routes */}
