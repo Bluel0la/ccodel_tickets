@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import logo from "../../assets/logo.png"
+import {Link} from "react-router-dom"
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const handleChange = (e) => {
@@ -12,10 +13,11 @@ const Login = () => {
   };
   return (
     <div className="flex h-screen items-center justify-center bg-[#bacbef] px-4">
-      <div className="w-full max-w-4xl flex flex-col md:flex-row shadow-lg rounded-lg overflow-hidden">
+      <div className="w-full max-w-4xl flex flex-col md:flex-row shadow-lg rounded-lg overflow-hidden md:h-[90vh]">
         {/* Left Section (Info Panel) */}
         <div className="w-full md:w-1/2 bg-[#3b4794] text-white p-8 flex flex-col justify-center items-center md:items-start">
          <img src={logo} />
+         
           <p className="text-sm opacity-90 mb-6 text-center md:text-left font-[DM Sans]">
             Login to your student support portal to submit and track tickets.
           </p>
@@ -27,7 +29,7 @@ const Login = () => {
         {/* Right Section (Login Form) */}
         <div className="w-full md:w-1/2 bg-white p-8 flex flex-col justify-center">
           <h2 className="text-2xl font-bold text-[#3b4794] mb-2 text-center md:text-left font-[Merriweather]">
-            Student Login
+          Support Login
           </h2>
           <p className="text-sm text-gray-500 mb-6 text-center md:text-left font-[DM Sans]">
             Enter your credentials to access your support account.
@@ -74,9 +76,9 @@ const Login = () => {
 
           <p className="text-center text-sm text-gray-600 mt-4 font-[DM Sans]">
             Don't have an account?{" "}
-            <a href="#" className="text-[#3179bc] hover:underline">
+            <Link to="/register" className="text-[#3179bc] hover:underline">
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
