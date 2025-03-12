@@ -3,14 +3,13 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/student/Dashboard";
-import DashboardLayout from "./pages/__test__/DashboardLayout";
 function App() {
   return (
     <Routes>
       {/*Auth Routes  I'm testing here, don't be scared*/}
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
-      <Route path='/test' element={<DashboardLayout/>}/>
+      <Route path='/reg' element={<Register/>}/>
       <Route path='/regis' element={<Register/>}/>
       <Route path='/r' element={<Register/>}/>
       <Route path='/re' element={<Register/>}/>
