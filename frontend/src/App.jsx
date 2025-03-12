@@ -1,14 +1,15 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 import Dashboard from "./pages/student/Dashboard";
 import DashContainer from "./pages/__test__/DashContainer";
 function App() {
   return (
     <Routes>
       {/*Auth Routes */}
-      <Route path="/" element={<DashContainer />} />
-      <Route path='/login' element={<Login/>}/>
+      <Route path="/" element={<Login />} />
+      <Route path='/register' element={<Register/>}/>
       {/*Auth Routes */}
 
       {/*Admin Routes */}
