@@ -1,6 +1,7 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
+import Dashboard from "./pages/student/Dashboard";
 function App() {
   return (
     <Routes>
@@ -10,7 +11,7 @@ function App() {
       {/*Auth Routes */}
 
       {/*Admin Routes */}
-      {/*  <Route path='/admin' element={}/>*/}
+        {/* <Route path='/admin' element={}/> */}
       {/*  <Route path='/admin' element={}/>*/}
       {/*  <Route path='/admin' element={}/>*/}
       {/*  <Route path='/admin' element={}/>*/}
@@ -18,7 +19,7 @@ function App() {
       {/*Admin Routes */}
 
       {/*Student Routes */}
-      {/*  <Route path='student/' element={}/>*/}
+        <Route path='/student' element={<Dashboard />}/>
       {/*  <Route path='student/' element={}/>*/}
       {/*  <Route path='student/' element={}/>*/}
       {/*  <Route path='student/' element={}/>*/}
