@@ -6,13 +6,7 @@ from enum import Enum
 class RoleEnum(str, Enum):
     admin = "admin"
     support = "support"
-    user = "user"
-
-# School Role Enum
-class SchoolRoleEnum(str, Enum):
-    faculty = "faculty"
-    staff = "staff"
-    student = "student"
+    user = "student"
 
 # UserOut Schema (for API response)
 class UserOut(BaseModel):
@@ -22,7 +16,6 @@ class UserOut(BaseModel):
     last_name: str
     username: str
     role: RoleEnum
-    school_role: SchoolRoleEnum
 
     class Config:
         from_attributes = True

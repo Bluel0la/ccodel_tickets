@@ -41,8 +41,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
         last_name=user_data.lastname,
         email=user_data.email,
         password=hashed_pwd,
-        role="user",  # Default role
-        school_role=user_data.school_role  # Allow user to specify this
+        role="student"
     )
 
     db.add(new_user)
@@ -72,7 +71,7 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
         "user": {
             "username": user.username,
             "role": user.role,
-            "school_role": user.school_role
+            "user_id": user.user_id
         }
     }
 
@@ -96,8 +95,7 @@ def get_current_user_details(
         "first_name": user.first_name,
         "last_name": user.last_name,
         "email": user.email,
-        "role": user.role,
-        "school_role": user.school_role,
+        "role": user.role
     }
 
 
