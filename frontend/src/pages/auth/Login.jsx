@@ -1,23 +1,49 @@
 import React, { useState } from "react";
-import logo from "../../assets/logo.png"
-import {Link} from "react-router-dom"
+import { useNavigate } from "react-router-dom"; // Import useNavigate
+import axios from "axios";
+import logo from "../../assets/logo.png";
+import { Link } from "react-router-dom";
+
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const navigate = useNavigate(); // Initialize navigate function
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Login successful!"); // Replace with actual authentication logic
+
+    try {
+      const response = await axios.post(
+        "https://ccodel-tickets.onrender.com/api/v1/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        }
+      );
+
+      alert("Login successful!");
+      //const userId = sessionStorage.getItem("user_id");
+
+      sessionStorage.setItem("user_id", response.data.user.userId);
+
+      // Navigate to the role-based dashboard
+      navigate(`/${response.data.user.role}/`);
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Login failed. Please try again.");
+    }
   };
+
   return (
     <div className="flex h-screen items-center justify-center bg-[#bacbef] px-4">
       <div className="w-full max-w-4xl flex flex-col md:flex-row shadow-lg rounded-lg overflow-hidden md:h-[90vh]">
         {/* Left Section (Info Panel) */}
         <div className="w-full md:w-1/2 bg-[#3b4794] text-white p-8 flex flex-col justify-center items-center md:items-start">
-         <img src={logo} />
-         
+          <img src={logo} />
+
           <p className="text-sm opacity-90 mb-6 text-center md:text-left font-[DM Sans]">
             Login to your student support portal to submit and track tickets.
           </p>
@@ -29,7 +55,7 @@ const Login = () => {
         {/* Right Section (Login Form) */}
         <div className="w-full md:w-1/2 bg-white p-8 flex flex-col justify-center">
           <h2 className="text-2xl font-bold text-[#3b4794] mb-2 text-center md:text-left font-[Merriweather]">
-          Support Login
+            Support Login
           </h2>
           <p className="text-sm text-gray-500 mb-6 text-center md:text-left font-[DM Sans]">
             Enter your credentials to access your support account.
