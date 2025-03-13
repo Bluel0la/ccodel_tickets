@@ -4,7 +4,7 @@ import AdminDashboard from "../../pages/__test__/admin/AdminDashboard";
 import ContentNavbar from "./ContentNavbar";
 
 const DashLayout = ({content}) => {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(true);
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
 
   return (
     <div className="flex overflow-x-hidden min-h-[100vh]">
@@ -13,7 +13,7 @@ const DashLayout = ({content}) => {
       {/* Sidebar/Navbar */}
       <Navbar isOpen={isNavbarOpen} toggleNavbar={() => setIsNavbarOpen(!isNavbarOpen)} />
 
-      <div className={`flex-1 transition-all duration-300 ${isNavbarOpen ? "lg:ml-64 md:ml-16 sm:ml-16" : "ml-16"}`}>
+      <div className={`flex-1 transition-all duration-300 ${isNavbarOpen ? "lg:ml-3 md:ml-3 sm:ml-14" : "ml-14"}`}>
         <ContentNavbar />
         {content}
       </div>

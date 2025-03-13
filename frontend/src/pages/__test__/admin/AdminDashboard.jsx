@@ -34,12 +34,12 @@ const AdminDashboard = ({ isNavbarOpen }) => {
   return (
     <div
       className={`px-4 pb-6 transition-all duration-300 w-full ${
-        isNavbarOpen ? "lg:ml-64 md:ml-16 sm:ml-16" : "ml-2"
+        isNavbarOpen ? "lg:ml-64 md:ml-16 sm:ml-16" : "lg:ml-6 ml-2"
       }`}
     >
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-6">
+      <div className="grid align-center  justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-6 md:w-[90vw] w-[77vw]">
         {stats.map((stat, index) => (
           <div key={index} className="p-4 bg-[#3b4794] text-white border border-gray-200 rounded-lg shadow-sm">
             <div className="flex items-center space-x-4">
@@ -53,7 +53,7 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       </div>
 
       {/* Ticket Categories & Ticket Trends (Responsive Grid) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 md:w-[90vw]  w-[77vw]">
         <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm">
           <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Ticket Categories Breakdown</h2>
           <ResponsiveContainer width="100%" height={250}>
@@ -84,7 +84,7 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       </div>
 
       {/* Recent Tickets Table (Responsive) */}
-      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm mb-6">
+      <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm mb-6 md:w-[90vw]  w-[77vw]">
         <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Recent Tickets</h2>
         <TicketTable tickets={tickets} />
       </div>
