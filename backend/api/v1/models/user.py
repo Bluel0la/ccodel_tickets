@@ -14,7 +14,6 @@ class User(Base):
     password = Column(String, nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
-    username = Column(String(255), unique=True, nullable=False)
     role = Column(Enum("admin", "support", "student", name="role_enum"), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)  # ✅ Added is_active column
 

@@ -9,7 +9,7 @@ class RoleEnum(str, Enum):
 
 
 class UserCreate(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
+    matric_number: str = Field(..., min_length=3, max_length=50)
     firstname: str = Field(..., min_length=1, max_length=50)
     lastname: str = Field(..., min_length=1, max_length=50)
     email: EmailStr

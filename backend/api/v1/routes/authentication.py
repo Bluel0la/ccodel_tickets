@@ -36,7 +36,7 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
     # Create new user
     new_user = User(
-        username=user_data.username,
+        matric_number=user_data.matric_number,
         first_name=user_data.firstname,
         last_name=user_data.lastname,
         email=user_data.email,
@@ -69,7 +69,8 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": {
-            "username": user.username,
+            "matric_number": user.matric_number,
+            "first_name": user.first_name,
             "role": user.role,
             "user_id": user.user_id
         }
@@ -91,7 +92,6 @@ def get_current_user_details(
 
     return {
         "user_id": user.user_id,
-        "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "email": user.email,
