@@ -25,11 +25,11 @@ auth = APIRouter(prefix="/auth", tags=["Authentication"])
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     # Check if email or username already exists
     existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
+        (User.email == user_data.email) | (User.matric_number == user_data.matric_number)
     ).first()
     
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email or username already registered")
+        raise HTTPException(status_code=400, detail="Email or Matric No. already registered")
     
     # Hash password
     hashed_pwd = hash_password(user_data.password)
