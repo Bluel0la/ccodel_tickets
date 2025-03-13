@@ -2,9 +2,13 @@ import React, { useState } from "react";
 import logo from "../../assets/logo.png";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { Spinner } from "flowbite-react";
+
 import { useNavigate } from "react-router-dom";
 const Register = () => {
   const navigate = useNavigate(); 
+    const [loading, setLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     matric_number: "",
     firstname: "",
@@ -20,7 +24,7 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setLoading(true);
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
@@ -120,7 +124,7 @@ const Register = () => {
               type="submit"
               className="w-full bg-[#3b4794] hover:bg-[#3179bc] text-white font-bold p-[8px] rounded font-[DM Sans]"
             >
-              Register
+              {loading ? <Spinner size="sm" className="mr-2" /> : "Register"}
             </button>
           </form>
 
