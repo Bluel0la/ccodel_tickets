@@ -21,7 +21,9 @@ app = FastAPI(lifespan=lifespan)
 
 
 origins = [
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://localhost:5173",
+    "https://ccodel-tickets-avab.vercel.app"
 ]
 
 app.add_middleware(
