@@ -13,7 +13,7 @@ const DashLayout = ({content}) => {
       {/* Sidebar/Navbar */}
       <Navbar isOpen={isNavbarOpen} toggleNavbar={() => setIsNavbarOpen(!isNavbarOpen)} />
 
-      <div className={`flex-1 transition-all duration-300 ${isNavbarOpen ? "lg:ml-3 md:ml-3 sm:ml-14" : "ml-14"}`}>
+      <div className={`flex-1 transition-all duration-300 ${isNavbarOpen ? "lg:ml-16 md:ml-48 sm:ml-14" : "ml-14"}`}>
         <ContentNavbar />
         {content}
       </div>
