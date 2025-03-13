@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
-import AdminDashboard from "./AdminDashboard";
+import AdminDashboard from "../../pages/__test__/admin/AdminDashboard";
 import ContentNavbar from "./ContentNavbar";
 
-const DashLayout = () => {
+const DashLayout = ({content}) => {
   const [isNavbarOpen, setIsNavbarOpen] = useState(true);
 
   return (
@@ -15,7 +15,7 @@ const DashLayout = () => {
 
       <div className={`flex-1 transition-all duration-300 ${isNavbarOpen ? "lg:ml-64 md:ml-16 sm:ml-16" : "ml-16"}`}>
         <ContentNavbar />
-        <AdminDashboard />
+        {content}
       </div>
     </div>
   );

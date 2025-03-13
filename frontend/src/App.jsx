@@ -4,6 +4,8 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/student/Dashboard";
 import TestAdminDash from "./pages/__test__/admin/TestAdminDash";
+import DashLayout from "./components/__test__/DashLayout";
+import AdminDashboard from "./pages/__test__/admin/AdminDashboard";
 function App() {
   return (
     <Routes>
@@ -11,9 +13,9 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
       <Route path='/test/admin' element={<Register/>}/>
-      <Route path='/test/student/dashboard' element={<TestAdminDash/>}/>
+      <Route path='/test/student/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
       <Route path='/test/support/dashboard' element={<TestAdminDash/>}/>
-      <Route path='/test/admin/dashboard' element={<TestAdminDash/>}/>
+      <Route path='/test/admin/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
       <Route path='/regi' element={<Register/>}/>
       <Route path='/ster' element={<Register/>}/>
       <Route path='/er' element={<Register/>}/>
