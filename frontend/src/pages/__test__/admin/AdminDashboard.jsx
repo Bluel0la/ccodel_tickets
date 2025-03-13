@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { FiClipboard, FiUsers, FiAlertTriangle, FiClock } from "react-icons/fi";
 import TicketTable from "../../../components/__test__/TicketTable";
+import TicketDrawer from "../../../components/__test__/TicketDrawer";
 
 const AdminDashboard = ({ isNavbarOpen }) => {
   const tickets = [
@@ -9,6 +10,12 @@ const AdminDashboard = ({ isNavbarOpen }) => {
     { id: "#1013", user: "Sarah Smith", subject: "Payment Failure", status: "Pending", priority: "Medium", date: "March 11" },
     { id: "#1014", user: "Mark Lee", subject: "Course Enrollment Bug", status: "Resolved", priority: "Low", date: "March 10" },
   ];
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setIsDrawerOpen(true);
+  };
 
   const stats = [
     { title: "Open Tickets", value: 45, description: "Waiting for response", icon: <FiClipboard size={24} /> },
@@ -86,7 +93,10 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       {/* Recent Tickets Table (Responsive) */}
       <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm mb-6 md:w-[90vw]  w-[77vw]">
         <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Recent Tickets</h2>
-        <TicketTable tickets={tickets} />
+        <TicketTable tickets={tickets} onViewTicket={handleViewTicket} />
+
+{/* Drawer */}
+<TicketDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} ticket={selectedTicket} />
       </div>
     </div>
   );

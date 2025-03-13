@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { FiSearch, FiChevronDown } from "react-icons/fi";
+import TicketDrawer from "./TicketDrawer"; // Import the TicketDrawer component
 
 const TicketTable = ({ tickets }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState(null);
   const [dateFilter, setDateFilter] = useState("Last 30 days");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   // Date Filter Options
   const dateFilters = ["Last day", "Last 7 days", "Last 30 days", "Last month", "Last year"];
@@ -12,6 +15,12 @@ const TicketTable = ({ tickets }) => {
   // Handle Sorting
   const handleSort = (field) => {
     setSortBy(field);
+  };
+
+  // Handle Opening the Drawer
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setIsDrawerOpen(true);
   };
 
   // Apply Search & Sorting
@@ -48,12 +57,10 @@ const TicketTable = ({ tickets }) => {
       <table className="w-full text-sm text-left text-gray-500">
         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
           <tr className="hidden sm:table-row">
-            <th className="p-4">
-            
-            </th>
+            <th className="p-4"></th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("id")}>Ticket ID</th>
-            <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("user")}>User</th>
-            <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("subject")}>Subject</th>
+            <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("user")}>Student</th>
+            <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("subject")}>Category</th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("status")}>Status</th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("priority")}>Priority</th>
             <th className="px-6 py-3">Action</th>
@@ -63,7 +70,6 @@ const TicketTable = ({ tickets }) => {
           {filteredTickets.length > 0 ? (
             filteredTickets.map((ticket) => (
               <tr key={ticket.id} className="border-b hover:bg-gray-50">
-                {/* Full Table for Tablets & Desktops */}
                 <td className="p-4 hidden sm:table-cell">
                   <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
                 </td>
@@ -89,7 +95,9 @@ const TicketTable = ({ tickets }) => {
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button className="text-blue-600 hover:underline">View</button>
+                  <button onClick={() => handleViewTicket(ticket)} className="text-blue-600 hover:underline">
+                    View
+                  </button>
                 </td>
               </tr>
             ))
@@ -100,6 +108,9 @@ const TicketTable = ({ tickets }) => {
           )}
         </tbody>
       </table>
+
+      {/* Drawer Component */}
+      <TicketDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} ticket={selectedTicket} />
     </div>
   );
 };
