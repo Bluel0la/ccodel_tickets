@@ -49,7 +49,7 @@ const TicketTable = ({ tickets }) => {
         <thead className="text-xs text-gray-700 uppercase bg-gray-50">
           <tr className="hidden sm:table-row">
             <th className="p-4">
-              <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
+            
             </th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("id")}>Ticket ID</th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("user")}>User</th>
