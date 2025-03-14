@@ -30,9 +30,9 @@ const Dashboard = () => {
                     Track your ticket
                   </button>
                 </Link>
-                <Link to="/register">
+                <Link to="/inbox">
                   <button type="button" className="px-5 py-3 w-60 h-30 text-base font-medium text-center text-white bg-[#3b4794] rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                    Get quick updates </button>
+                  Check Notifications</button>
                 </Link>
 
               </div>
