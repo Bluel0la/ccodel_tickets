@@ -3,6 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from './pages/auth/Register'
 import Dashboard from "./pages/student/Dashboard";
+import Home from "./pages/student/Home";
+import Createticket from "./pages/student/Createticket";
 function App() {
   return (
     <Routes>
@@ -29,8 +31,8 @@ function App() {
 
       {/*Student Routes */}
         <Route path='/student' element={<Dashboard />}/>
-      {/*  <Route path='student/' element={}/>*/}
-      {/*  <Route path='student/' element={}/>*/}
+       <Route path='/home' element={<Home/>}/>
+      <Route path='/create' element={<Createticket/>}/>
       {/*  <Route path='student/' element={}/>*/}
       {/*  <Route path='student/' element={}/>*/}
       {/*  <Route path='student/' element={}/>*/}
