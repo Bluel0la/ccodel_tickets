@@ -31,7 +31,6 @@ class UserOut(BaseModel):
     email: EmailStr
     first_name: str
     last_name: str
-    username: str
     role: RoleEnum
 
     class Config:
