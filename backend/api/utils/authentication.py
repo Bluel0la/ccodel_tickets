@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 from api.db.database import get_db
 from api.v1.models.revoked_tokens import RevokedToken
 from api.v1.models.user import User
+from api.v1.models.refresh_tokens import RefreshToken
 
 load_dotenv(".env")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -35,6 +37,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -42,18 +45,25 @@ def decode_access_token(token: str):
     except JWTError:
         return None
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    # Check if token is revoked
-    if db.query(RevokedToken).filter(RevokedToken.token == token).first():
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+    if (db.query(RevokedToken).filter(RevokedToken.token == token).first() or
+        db.query(RefreshToken).filter(RefreshToken.token == token).first()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is revoked")
 
     payload = decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    return payload
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token data")
+
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return user  # ✅ Now returns a User object instead of a dict
 
 def is_admin(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> bool:
     """

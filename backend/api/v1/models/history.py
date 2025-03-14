@@ -7,11 +7,11 @@ import uuid
 class TicketHistory(Base):
     __tablename__ = "ticket_history"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, index=True)
-    ticket_id = Column(UUID(as_uuid=True), ForeignKey("tickets.id"), nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    ticket_id = Column(UUID(as_uuid=True), ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
-    action = Column(Text, nullable=False)  # e.g., "Status changed to resolved", "Assigned to User X"
+    action = Column(Text, nullable=False)  # Example: "Status changed to resolved"
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     ticket = relationship("Ticket", back_populates="history")
-    user = relationship("User")
+    user = relationship("User", backref="ticket_history")

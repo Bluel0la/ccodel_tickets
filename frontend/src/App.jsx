@@ -3,18 +3,21 @@ import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from './pages/auth/Register'
 import Dashboard from "./pages/student/Dashboard";
-import Home from "./pages/student/Home";
-import Createticket from "./pages/student/Createticket";
+import TestAdminDash from "./pages/__test__/admin/TestAdminDash";
+import DashLayout from "./components/__test__/DashLayout";
+import AdminDashboard from "./pages/__test__/admin/AdminDashboard";
+import StudentDashboard from "./pages/__test__/student/StudentDashboard";
+import SupportDashboard from "./pages/__test__/support/SupportDashboard";
 function App() {
   return (
     <Routes>
       {/*Auth Routes  I'm testing here, don't be scared*/}
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
-      <Route path='/reg' element={<Register/>}/>
-      <Route path='/regis' element={<Register/>}/>
-      <Route path='/r' element={<Register/>}/>
-      <Route path='/re' element={<Register/>}/>
+      <Route path='/test/admin' element={<Register/>}/>
+      <Route path='/test/student/dashboard' element={<DashLayout content={<StudentDashboard/>}/>}/>
+      <Route path='/test/support/dashboard' element={<DashLayout content={<SupportDashboard/>}/>}/>
+      <Route path='/test/admin/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
       <Route path='/regi' element={<Register/>}/>
       <Route path='/ster' element={<Register/>}/>
       <Route path='/er' element={<Register/>}/>

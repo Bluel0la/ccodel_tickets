@@ -9,13 +9,12 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    matric_number = Column(String(255), unique=True, nullable=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
-    username = Column(String(255), unique=True, nullable=False)
-    role = Column(Enum("admin", "support", "user", name="role_enum"), nullable=False)
-    school_role = Column(Enum("faculty", "staff", "student", name="school_role_enum"), nullable=False)
+    role = Column(Enum("admin", "support", "student", name="role_enum"), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)  # ✅ Added is_active column
 
     tickets_assigned = relationship("Ticket", back_populates="assigned_to_user", foreign_keys="Ticket.assigned_to")

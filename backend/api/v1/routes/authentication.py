@@ -25,24 +25,23 @@ auth = APIRouter(prefix="/auth", tags=["Authentication"])
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
     # Check if email or username already exists
     existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
+        (User.email == user_data.email) | (User.matric_number == user_data.matric_number)
     ).first()
     
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email or username already registered")
+        raise HTTPException(status_code=400, detail="Email or Matric No. already registered")
     
     # Hash password
     hashed_pwd = hash_password(user_data.password)
 
     # Create new user
     new_user = User(
-        username=user_data.username,
+        matric_number=user_data.matric_number,
         first_name=user_data.firstname,
         last_name=user_data.lastname,
         email=user_data.email,
         password=hashed_pwd,
-        role="user",  # Default role
-        school_role=user_data.school_role  # Allow user to specify this
+        role="student"
     )
 
     db.add(new_user)
@@ -58,10 +57,13 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
     if not user or not verify_password(request.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    refresh_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(days=7))  # Refresh token for 7 days
+    access_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
+                                       expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    refresh_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
+                                        expires_delta=timedelta(days=7))
 
-    db_refresh_token = RefreshToken(user_id=user.user_id, token=refresh_token)
+    db_refresh_token = RefreshToken(user_id=user.user_id, token=refresh_token, 
+                                    expires_at=datetime.utcnow() + timedelta(days=7))
     db.add(db_refresh_token)
     db.commit()
 
@@ -70,9 +72,10 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
         "refresh_token": refresh_token,
         "token_type": "bearer",
         "user": {
-            "username": user.username,
+            "matric_number": user.matric_number,
+            "first_name": user.first_name,
             "role": user.role,
-            "school_role": user.school_role
+            "user_id": str(user.user_id)
         }
     }
 
@@ -92,12 +95,10 @@ def get_current_user_details(
 
     return {
         "user_id": user.user_id,
-        "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
         "email": user.email,
-        "role": user.role,
-        "school_role": user.school_role,
+        "role": user.role
     }
 
 

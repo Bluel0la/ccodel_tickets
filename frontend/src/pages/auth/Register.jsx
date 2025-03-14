@@ -1,21 +1,50 @@
 import React, { useState } from "react";
 import logo from "../../assets/logo.png";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { Spinner } from "flowbite-react";
 
+import { useNavigate } from "react-router-dom";
 const Register = () => {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const navigate = useNavigate(); 
+    const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    matric_number: "",
+    firstname: "",
+    lastname: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    alert("Registration successful!"); // Replace with actual registration logic
+
+    const { confirmPassword, ...dataToSubmit } = formData; // Exclude confirmPassword from the data being sent
+
+    try {
+      const response = await axios.post(
+        "https://ccodel-tickets.onrender.com/api/v1/auth/register",
+        dataToSubmit
+      );
+      alert("Registration successful!");
+      setFormData("")
+      navigate('/');
+      console.log(response.data); // Handle response as needed
+    } catch (error) {
+      console.error("There was an error submitting the form!", error);
+      alert("Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -44,11 +73,27 @@ const Register = () => {
           <form onSubmit={handleSubmit}>
             <input
               type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
+              name="firstname"
+              placeholder="First Name"
+              value={formData.firstname}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+            />
+            <input
+              type="text"
+              name="lastname"
+              placeholder="Last Name"
+              value={formData.lastname}
+              onChange={handleChange}
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+            />
+            <input
+              type="text"
+              name="matric_number"
+              placeholder="Matric Number"
+              value={formData.matric_number}
+              onChange={handleChange}
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
             />
             <input
               type="email"
@@ -56,7 +101,7 @@ const Register = () => {
               placeholder="Your Email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
             />
             <input
               type="password"
@@ -64,7 +109,7 @@ const Register = () => {
               placeholder="Password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
             />
             <input
               type="password"
@@ -72,19 +117,19 @@ const Register = () => {
               placeholder="Confirm Password"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
+              className="w-full p-[8px] border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-[#3179bc] font-[DM Sans]"
             />
 
             <button
               type="submit"
-              className="w-full bg-[#3b4794] hover:bg-[#3179bc] text-white font-bold p-3 rounded font-[DM Sans]"
+              className="w-full bg-[#3b4794] hover:bg-[#3179bc] text-white font-bold p-[8px] rounded font-[DM Sans]"
             >
-              Register
+              {loading ? <Spinner size="sm" className="mr-2" /> : "Register"}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-600 mt-4 font-[DM Sans]">
-            Already have an account? {" "}
+            Already have an account?{" "}
             <Link to="/" className="text-[#3179bc] hover:underline">
               Login
             </Link>

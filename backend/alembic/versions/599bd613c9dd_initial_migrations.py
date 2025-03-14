@@ -1,8 +1,8 @@
-"""Initial Migration
+"""Initial Migrations
 
-Revision ID: ad85bde556a5
+Revision ID: 599bd613c9dd
 Revises: 
-Create Date: 2025-03-11 12:08:19.598365
+Create Date: 2025-03-13 17:37:33.018928
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ad85bde556a5'
+revision: str = '599bd613c9dd'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,15 +29,16 @@ def upgrade() -> None:
     op.create_index(op.f('ix_tags_id'), 'tags', ['id'], unique=False)
     op.create_table('users',
     sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('matric_number', sa.String(length=255), nullable=True),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('password', sa.String(), nullable=False),
     sa.Column('first_name', sa.String(length=255), nullable=False),
     sa.Column('last_name', sa.String(length=255), nullable=False),
     sa.Column('username', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.Enum('admin', 'support', 'user', name='role_enum'), nullable=False),
-    sa.Column('school_role', sa.Enum('faculty', 'staff', 'student', name='school_role_enum'), nullable=False),
+    sa.Column('role', sa.Enum('admin', 'support', 'student', name='role_enum'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('user_id'),
+    sa.UniqueConstraint('matric_number'),
     sa.UniqueConstraint('username')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
@@ -47,16 +48,18 @@ def upgrade() -> None:
     sa.Column('description', sa.Text(), nullable=False),
     sa.Column('priority', sa.Enum('low', 'medium', 'high', name='priority_enum'), nullable=False),
     sa.Column('status', sa.Enum('open', 'in_progress', 'resolved', 'closed', name='status_enum'), nullable=False),
+    sa.Column('created_by', sa.UUID(), nullable=False),
     sa.Column('assigned_to', sa.UUID(), nullable=True),
     sa.Column('assigned_by', sa.UUID(), nullable=False),
+    sa.Column('closed_by', sa.UUID(), nullable=True),
+    sa.Column('category', sa.String(), nullable=False),
     sa.Column('date_created', sa.DateTime(), nullable=True),
     sa.Column('date_resolved', sa.DateTime(), nullable=True),
     sa.Column('date_closed', sa.DateTime(), nullable=True),
-    sa.Column('closed_by', sa.UUID(), nullable=True),
-    sa.Column('category', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['assigned_by'], ['users.user_id'], ),
     sa.ForeignKeyConstraint(['assigned_to'], ['users.user_id'], ),
     sa.ForeignKeyConstraint(['closed_by'], ['users.user_id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tickets_id'), 'tickets', ['id'], unique=False)
@@ -65,7 +68,7 @@ def upgrade() -> None:
     sa.Column('ticket_id', sa.UUID(), nullable=False),
     sa.Column('file_path', sa.String(), nullable=False),
     sa.Column('uploaded_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ),
+    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_attachments_id'), 'attachments', ['id'], unique=False)
@@ -75,7 +78,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('message', sa.Text(), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ),
+    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -86,7 +89,7 @@ def upgrade() -> None:
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('action', sa.Text(), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ),
+    sa.ForeignKeyConstraint(['ticket_id'], ['tickets.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ),
     sa.PrimaryKeyConstraint('id')
     )
