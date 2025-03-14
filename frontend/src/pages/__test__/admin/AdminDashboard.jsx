@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { FiClipboard, FiUsers, FiAlertTriangle, FiClock } from "react-icons/fi";
 import TicketTable from "../../../components/__test__/TicketTable";
+import TicketDrawer from "../../../components/__test__/TicketDrawer";
 
 const AdminDashboard = ({ isNavbarOpen }) => {
   const tickets = [
@@ -9,6 +10,12 @@ const AdminDashboard = ({ isNavbarOpen }) => {
     { id: "#1013", user: "Sarah Smith", subject: "Payment Failure", status: "Pending", priority: "Medium", date: "March 11" },
     { id: "#1014", user: "Mark Lee", subject: "Course Enrollment Bug", status: "Resolved", priority: "Low", date: "March 10" },
   ];
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setIsDrawerOpen(true);
+  };
 
   const stats = [
     { title: "Open Tickets", value: 45, description: "Waiting for response", icon: <FiClipboard size={24} /> },
@@ -41,12 +48,12 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       {/* Stats Cards */}
       <div className="grid align-center  justify-center grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 my-6 md:w-[90vw] w-[77vw]">
         {stats.map((stat, index) => (
-          <div key={index} className="p-4 bg-[#3b4794] text-white border border-gray-200 rounded-lg shadow-sm">
+          <div key={index} className="p-4 bg-[#3b4794] text-white border border-gray-200 rounded-lg shadow-sm flex  flex-col items-center justify-center">
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-white text-[#3b4794] rounded-full">{stat.icon}</div>
               <h5 className="text-lg sm:text-2xl font-bold tracking-tight">{stat.value}</h5>
             </div>
-            <p className="mt-1 text-base font-semibold">{stat.title}</p>
+            <p className="mt-1 text-base font-semibold font-['Merriweather']">{stat.title}</p>
             <p className="text-sm text-white/80">{stat.description}</p>
           </div>
         ))}
@@ -55,7 +62,7 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       {/* Ticket Categories & Ticket Trends (Responsive Grid) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 md:w-[90vw]  w-[77vw]">
         <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm">
-          <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Ticket Categories Breakdown</h2>
+          <h2 className="text-lg sm:text-xl font-black text-[#3b4794] mb-4 font-['Merriweather']">Ticket Categories Breakdown</h2>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={ticketCategories} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label>
@@ -69,7 +76,7 @@ const AdminDashboard = ({ isNavbarOpen }) => {
         </div>
 
         <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm">
-          <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Ticket Trends</h2>
+          <h2 className="text-lg sm:text-xl font-black text-[#3b4794] mb-4 font-['Merriweather']">Ticket Trends</h2>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={ticketTrends}>
               <XAxis dataKey="month" />
@@ -86,7 +93,10 @@ const AdminDashboard = ({ isNavbarOpen }) => {
       {/* Recent Tickets Table (Responsive) */}
       <div className="bg-white p-4 sm:p-6 border border-gray-200 rounded-lg shadow-sm mb-6 md:w-[90vw]  w-[77vw]">
         <h2 className="text-lg sm:text-xl font-semibold text-[#3b4794] mb-4">Recent Tickets</h2>
-        <TicketTable tickets={tickets} />
+        <TicketTable tickets={tickets} onViewTicket={handleViewTicket} />
+
+{/* Drawer */}
+<TicketDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} ticket={selectedTicket} />
       </div>
     </div>
   );
