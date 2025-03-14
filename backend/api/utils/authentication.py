@@ -44,7 +44,7 @@ def decode_access_token(token: str):
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     # Check if token is revoked
     if db.query(RevokedToken).filter(RevokedToken.token == token).first():
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is revoked")
@@ -53,7 +53,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    return payload
+    user_id = payload.get("user_id")  # Ensure "user_id" is in the token payload
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token data")
+
+    # Fetch the user from the database
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return user  # ✅ Now returning a User object instead of a dict
 
 def is_admin(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> bool:
     """

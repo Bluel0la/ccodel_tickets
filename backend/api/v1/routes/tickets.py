@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from uuid import UUID
 from api.db.database import get_db
 from api.v1.models.ticket import Ticket
-from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, TicketClose
-from api.utils.authentication import get_current_user, require_role
+from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse
+from api.utils.authentication import get_current_user
 from api.v1.models.user import User
 from typing import List
 from datetime import datetime
+from api.utils.file_storage import upload_to_gcs  
+from api.v1.models.attachement import Attachment
 
 router = APIRouter(prefix="/tickets", tags=["Tickets"])
 
@@ -204,3 +206,61 @@ def cancel_ticket(
     db.commit()
     db.refresh(ticket)
     return ticket
+
+# Add attachements
+@router.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
+def add_attachment(
+    ticket_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Authorization: Only Admin, assigned support staff, or ticket creator can upload
+    if current_user.role != "admin" and current_user.user_id not in [ticket.assigned_by, ticket.assigned_to]:
+        raise HTTPException(status_code=403, detail="Unauthorized to upload attachments")
+
+    # Upload file to GCS and get URL
+    file_url = upload_to_gcs(file, str(ticket_id))
+
+    # Save to DB
+    attachment = Attachment(ticket_id=ticket_id, file_path=file_url)
+    db.add(attachment)
+    db.commit()
+    db.refresh(attachment)
+
+    return attachment
+
+# View Attachments for tickets
+@router.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
+def get_ticket_attachments(
+    ticket_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Fetch the ticket
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    # Role-based access control
+    if current_user.role == "admin":
+        # Admins can access any ticket's attachments
+        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+    
+    elif current_user.role == "support":
+        # Support staff can only access attachments for tickets assigned to them
+        if ticket.assigned_to != current_user.user_id:
+            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this ticket")
+        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+
+    else:
+        # Regular users can only access attachments for their own submitted tickets
+        if ticket.assigned_by != current_user.user_id:
+            raise HTTPException(status_code=403, detail="Access denied: You did not create this ticket")
+        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+
+    return attachments
