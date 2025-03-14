@@ -9,6 +9,9 @@ const TicketTable = ({ tickets }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
+  // Check if the current route contains "/student"
+  const isStudentRoute = window.location.pathname.includes("/student");
+
   // Date Filter Options
   const dateFilters = ["Last day", "Last 7 days", "Last 30 days", "Last month", "Last year"];
 
@@ -59,7 +62,7 @@ const TicketTable = ({ tickets }) => {
           <tr className="hidden sm:table-row">
             <th className="p-4"></th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("id")}>Ticket ID</th>
-            <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("user")}>Student</th>
+            {!isStudentRoute && <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("user")}>Student</th>}
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("subject")}>Category</th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("status")}>Status</th>
             <th className="px-6 py-3 cursor-pointer" onClick={() => handleSort("priority")}>Priority</th>
@@ -74,7 +77,7 @@ const TicketTable = ({ tickets }) => {
                   <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
                 </td>
                 <td className="px-6 py-4 hidden sm:table-cell">{ticket.id}</td>
-                <td className="px-6 py-4 hidden sm:table-cell">{ticket.user}</td>
+                {!isStudentRoute && <td className="px-6 py-4 hidden sm:table-cell">{ticket.user}</td>}
                 <td className="px-6 py-4">{ticket.subject}</td>
                 <td className="px-6 py-4 hidden sm:table-cell">
                   <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${

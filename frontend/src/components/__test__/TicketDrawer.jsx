@@ -16,7 +16,7 @@ const TicketDrawer = ({ isOpen, onClose, ticket }) => {
     <>
       {/* Backdrop with correct behavior (Clicking it closes the drawer) */}
       <div
-        className={`fixed inset-0 bg-[#f3f3f3] bg-opacity-20 z-40 transition-opacity ${isOpen ? "visible opacity-100" : "invisible opacity-0"}`}
+        className={`fixed inset-0 bg-[#00000077] bg-opacity-20 z-40 transition-opacity ${isOpen ? "visible opacity-100" : "invisible opacity-0"}`}
         onClick={onClose}
       ></div>
 
