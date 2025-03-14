@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { FiClipboard, FiCheckCircle, FiClock, FiUserCheck, FiAlertTriangle, FiPlusCircle } from "react-icons/fi";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { FiClipboard, FiCheckCircle, FiClock, FiUserCheck, FiAlertTriangle, FiPlusCircle, FiFilter, FiBell, FiUsers } from "react-icons/fi";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts";
 import TicketTable from "../../../components/__test__/TicketTable";
 
 const SupportDashboard = () => {
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [ticketDetails, setTicketDetails] = useState({ subject: "", description: "" });
+  const [ticketFilter, setTicketFilter] = useState("All");
 
   const tickets = [
     { id: "#3012", student: "Jane Doe", subject: "Account Locked", status: "Open", priority: "High", date: "March 14" },
@@ -25,6 +26,37 @@ const SupportDashboard = () => {
     { month: "Feb", open: 20, resolved: 15 },
     { month: "Mar", open: 25, resolved: 20 },
     { month: "Apr", open: 18, resolved: 16 },
+  ];
+
+  const ticketOverview = [
+    { name: "Open", value: 20, color: "#ff4d4f" },
+    { name: "Pending", value: 10, color: "#ffc107" },
+    { name: "Resolved", value: 85, color: "#28a745" },
+  ];
+
+  const notifications = [
+    {
+      message: "New ticket assigned to you: #3045",
+      type: "ticket",
+      time: "2 mins ago",
+    },
+    {
+      message: "Ticket #3012 marked as Resolved",
+      type: "ticket",
+      time: "1 hour ago",
+    },
+    {
+      message: "Admin posted a new announcement",
+      type: "announcement",
+      time: "Yesterday",
+    },
+   
+  ];
+  
+  const teamActivity = [
+    { name: "Sarah Adams", task: "Handling Ticket #3015", status:" Online" },
+    { name: "James Davies", task: "Resolved 3 tickets today",status:" Online" },
+    { name: "Linda Kren", task: "Working on ticket #3018" ,status:" Online"},
   ];
 
   const handleCreateTicket = (e) => {
@@ -49,16 +81,84 @@ const SupportDashboard = () => {
             <p className="text-sm text-white/80">{stat.description}</p>
           </div>
         ))}
-        <div className="flex items-center justify-center">
-          <button
-            onClick={() => setIsCreatingTicket(true)}
-            className="flex items-center space-x-2 px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition w-full"
-          >
-            <FiPlusCircle size={20} />
-            <span>Create New Ticket</span>
-          </button>
-        </div>
+     
       </div>
+
+      {/* Ticket Overview + Response Time + Notifications */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Ticket Overview (Pie Chart) */}
+        <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+          <h2 className="text-xl font-semibold text-[#3b4794] mb-4">Ticket Status Overview</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={ticketOverview} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value">
+                {ticketOverview.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Recent Notifications */}
+        <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+  <h2 className="text-xl font-semibold text-[#3b4794] mb-4 flex items-center">
+    <FiBell className="mr-2" /> Recent Notifications
+  </h2>
+  <ul className="space-y-4">
+    {notifications.map((note, index) => (
+      <li key={index} className="flex items-center justify-between border-b pb-3">
+        {/* Notification Icon & Message */}
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-gray-100 rounded-full">
+            {note.type === "ticket" ? (
+              <FiClipboard className="text-blue-600" />
+            ) : note.type === "announcement" ? (
+              <FiUsers className="text-green-600" />
+            ) : (
+              <FiAlertTriangle className="text-red-600" />
+            )}
+          </div>
+          <span className="text-gray-700">{note.message}</span>
+        </div>
+        {/* Timestamp */}
+        <span className="text-xs text-gray-500">{note.time}</span>
+      </li>
+    ))}
+  </ul>
+</div>
+
+        {/* Support Team Activity */}
+        <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+  <h2 className="text-xl font-semibold text-[#3b4794] mb-4 flex items-center">
+    <FiUsers className="mr-2" /> Support Team Activity
+  </h2>
+  <ul className="space-y-4">
+    {teamActivity.map((member, index) => (
+      <li key={index} className="flex items-center justify-between border-b pb-2">
+        {/* Avatar */}
+        <div className="flex items-center space-x-3">
+          <div className="relative inline-flex items-center justify-center w-10 h-10 overflow-hidden bg-gray-100 rounded-full">
+            <span className="font-medium text-gray-600">
+              {member.name.split(" ").map(n => n[0]).join("")}
+            </span>
+          </div>
+          <span className="text-gray-700 font-medium">{member.name}</span>
+        </div>
+        {/* Task and Status */}
+        <div className="flex items-center space-x-3">
+          <span className="text-gray-600">{member.task}</span>
+          <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${member.status === "Online" ? "bg-green-100 text-green-600" : "bg-gray-300 text-gray-700"}`}>
+            {member.status}
+          </span>
+        </div>
+      </li>
+    ))}
+  </ul>
+</div>
+</div>
+
 
       {/* Ticket Trends */}
       <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm mb-6">
@@ -80,36 +180,6 @@ const SupportDashboard = () => {
         <h2 className="text-xl font-semibold text-[#3b4794] mb-4">Assigned Tickets</h2>
         <TicketTable tickets={tickets} />
       </div>
-
-      {/* Create New Ticket Form (Popup) */}
-      {isCreatingTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Submit a Support Ticket</h2>
-            <form onSubmit={handleCreateTicket} className="space-y-4">
-              <input
-                type="text"
-                placeholder="Subject"
-                className="w-full p-2 border border-gray-300 rounded"
-                value={ticketDetails.subject}
-                onChange={(e) => setTicketDetails({ ...ticketDetails, subject: e.target.value })}
-                required
-              />
-              <textarea
-                placeholder="Describe the issue..."
-                className="w-full p-2 border border-gray-300 rounded h-24"
-                value={ticketDetails.description}
-                onChange={(e) => setTicketDetails({ ...ticketDetails, description: e.target.value })}
-                required
-              />
-              <div className="flex justify-between">
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">Submit</button>
-                <button type="button" onClick={() => setIsCreatingTicket(false)} className="px-4 py-2 text-gray-600">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
