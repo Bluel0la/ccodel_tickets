@@ -1,2 +1,6 @@
 @import "tailwindcss";
 @import "flowbite/src/themes/default";
+body{
+    font-family: 'DM Sans', sans-serif;
+
+}

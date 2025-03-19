@@ -40,12 +40,12 @@ const StudentDashboard = () => {
 
 
   return (
-    <div className="px-6 pb-6 transition-all duration-300 w-full">
+    <div className="px-6 pb-6 transition-all duration-300 w-full bg-gradient-to-r from-blue-400 to-purple-500">
 
       {/* Stats Cards + Create New Ticket Button */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 my-6 md:w-[90vw]  w-[77vw]">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 py-6 md:w-[90vw]  w-[77vw]">
       {stats.map((stat, index) => (
-          <div key={index} className="p-4 bg-[#3b4794] text-white border border-gray-200 rounded-lg shadow-sm flex  flex-col items-center justify-center">
+          <div key={index} className="p-4 bg-[#3b4794] text-white rounded-lg shadow-sm flex  flex-col items-center justify-center">
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-white text-[#3b4794] rounded-full">{stat.icon}</div>
               <h5 className="text-lg sm:text-2xl font-bold tracking-tight">{stat.value}</h5>
