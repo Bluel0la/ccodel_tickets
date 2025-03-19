@@ -1,8 +1,10 @@
 import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
+import Register from './pages/auth/Register'
 import Dashboard from "./pages/student/Dashboard";
+import Home from "./pages/student/Home";
+import Createticket from "./pages/student/Createticket";
 import TestAdminDash from "./pages/__test__/admin/TestAdminDash";
 import DashLayout from "./components/__test__/DashLayout";
 import AdminDashboard from "./pages/__test__/admin/AdminDashboard";
@@ -11,6 +13,7 @@ import SupportDashboard from "./pages/__test__/support/SupportDashboard";
 import SupportTickets from "./pages/__test__/support/SupportTickets";
 import SupportPerformance from "./pages/__test__/support/SupportPerformance";
 import Equation from "./pages/__test__/Equation";
+import Inbox from "./pages/student/Inbox";
 function App() {
   return (
     <Routes>
@@ -37,9 +40,9 @@ function App() {
 
       {/*Student Routes */}
         <Route path='/student' element={<Dashboard />}/>
-      {/*  <Route path='student/' element={}/>*/}
-      {/*  <Route path='student/' element={}/>*/}
-      {/*  <Route path='student/' element={}/>*/}
+       <Route path='/home' element={<Home/>}/>
+      <Route path='/create' element={<Createticket/>}/>
+        <Route path='/inbox' element={<Inbox/>}/>
       {/*  <Route path='student/' element={}/>*/}
       {/*  <Route path='student/' element={}/>*/}
       {/*Student Routes */}

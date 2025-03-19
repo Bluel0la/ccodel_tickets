@@ -57,10 +57,13 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
     if not user or not verify_password(request.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    refresh_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(days=7))  # Refresh token for 7 days
+    access_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
+                                       expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    refresh_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
+                                        expires_delta=timedelta(days=7))
 
-    db_refresh_token = RefreshToken(user_id=user.user_id, token=refresh_token)
+    db_refresh_token = RefreshToken(user_id=user.user_id, token=refresh_token, 
+                                    expires_at=datetime.utcnow() + timedelta(days=7))
     db.add(db_refresh_token)
     db.commit()
 
@@ -72,7 +75,7 @@ def login(request: UserSignin, db: Session = Depends(get_db)):
             "matric_number": user.matric_number,
             "first_name": user.first_name,
             "role": user.role,
-            "user_id": user.user_id
+            "user_id": str(user.user_id)
         }
     }
 

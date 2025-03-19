@@ -6,7 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from api.db.database import create_database
 from api.v1.routes import api_version_one
+from dotenv import load_dotenv
+import os
 
+load_dotenv(".env")
+
+gcs_credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
