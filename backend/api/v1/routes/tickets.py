@@ -6,7 +6,7 @@ from api.v1.models.ticket import Ticket
 from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse
 from api.utils.authentication import get_current_user
 from api.v1.models.user import User
-from typing import List
+from typing import List, Dict, Any
 from datetime import datetime
 from api.v1.models.attachement import Attachment
 import shutil
@@ -14,7 +14,6 @@ import os
 from pathlib import Path
 from api.db.database import SessionLocal
 from datetime import timedelta
-
 tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 
@@ -172,13 +171,14 @@ def update_ticket(
     db.refresh(ticket)
     return ticket
 
+
 # Assign a ticket to a support agent
-@tickets.put("/{ticket_id}/assign", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/assign", response_model=Dict[str, Any])
 def assign_ticket(
     ticket_id: UUID,
     assign_data: TicketAssign,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # Get the current user
+    current_user: User = Depends(get_current_user),  # Get the current user
 ):
     # Ensure only admins can assign tickets
     if current_user.role != "admin":
@@ -189,14 +189,23 @@ def assign_ticket(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     # Ensure the assigned user is a support staff
-    assigned_user = db.query(User).filter(User.user_id == assign_data.assigned_to).first()
+    assigned_user = (
+        db.query(User).filter(User.user_id == assign_data.assigned_to).first()
+    )
     if not assigned_user or assigned_user.role != "support":
-        raise HTTPException(status_code=400, detail="Tickets can only be assigned to support staff.")
+        raise HTTPException(
+            status_code=400, detail="Tickets can only be assigned to support staff."
+        )
 
     ticket.assigned_to = assign_data.assigned_to
     db.commit()
     db.refresh(ticket)
-    return ticket
+
+    return {
+        "message": f"Ticket successfully assigned to {assigned_user.first_name} {assigned_user.last_name} (Support Staff).",
+        "ticket": ticket,
+    }
+
 
 # Close a ticket
 @tickets.put("/{ticket_id}/close", response_model=TicketResponse)
