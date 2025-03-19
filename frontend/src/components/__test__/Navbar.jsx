@@ -19,7 +19,7 @@ const Navbar = ({ isOpen, toggleNavbar }) => {
     ],
     student: [
       { name: "Dashboard", path: "/test/student/dashboard", icon: <FiHome size={20} /> },
-      { name: "Create Ticket", path: "/test/student/tickets/ticket", icon: <FiFileText size={20} /> },
+      { name: "Create Ticket", path: "/test/student/tickets/new-ticket", icon: <FiFileText size={20} /> },
       { name: "My Tickets", path: "/test/student/tickets", icon: <FiClipboard size={20} /> },
       { name: "Knowledge Base", path: "/test/student/knowledge-base", icon: <FiFolder size={20} /> },
       { name: "Settings", path: "/test/student/settings", icon: <FiSettings size={20} /> },

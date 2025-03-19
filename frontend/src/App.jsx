@@ -16,6 +16,7 @@ import Equation from "./pages/__test__/Equation";
 import Inbox from "./pages/student/Inbox";
 import StudentTicketCreation from "./pages/__test__/student/StudentTicketCreation";
 import StudentTickets from "./pages/__test__/student/StudentTickets";
+import KnowledgeBase from "./pages/student/KnowledgeBase";
 function App() {
   return (
     <Routes>
@@ -23,7 +24,7 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
 
-      
+
       <Route path='/test/admin' element={<Register/>}/>
       <Route path='/test/admin/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
 
@@ -35,8 +36,9 @@ function App() {
 
 
       <Route path='/test/student/dashboard' element={<DashLayout content={<StudentDashboard/>}/>}/>
-      <Route path='/test/student/tickets/ticket' element={<DashLayout content={<StudentTicketCreation/>}/>}/>
+      <Route path='/test/student/tickets/new-ticket' element={<DashLayout content={<StudentTicketCreation/>}/>}/>
       <Route path='/test/student/tickets' element={<DashLayout content={<StudentTickets/>}/>}/>
+      <Route path='/test/student/knowledge-base' element={<DashLayout content={<KnowledgeBase/>}/>}/>
       {/*Auth Routes */}
 
       {/*Admin Routes */}

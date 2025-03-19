@@ -29,7 +29,7 @@ const StudentTickets = ({ tickets }) => {
     .sort((a, b) => (sortBy ? (a[sortBy] > b[sortBy] ? 1 : -1) : 0));
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg p-4 bg-white">
+    <div className="h-full relative overflow-x-auto shadow-md sm:rounded-lg p-4 bg-gradient-to-r from-blue-400 to-purple-500">
       {/* Search & Filter Controls */}
       <div className="flex flex-col sm:flex-row flex-wrap items-center justify-between pb-4 gap-4">
         {/* Date Filter Dropdown */}

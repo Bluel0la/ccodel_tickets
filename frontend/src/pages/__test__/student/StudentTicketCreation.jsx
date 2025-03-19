@@ -43,7 +43,7 @@ const StudentTicketCreation = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-gradient-to-r from-blue-400 to-purple-500">
       {/* Ticket Form */}
       <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
         <h2 className="text-xl font-semibold text-[#3b4794] mb-4">Create a New Ticket</h2>
