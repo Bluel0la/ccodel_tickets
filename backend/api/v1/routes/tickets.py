@@ -45,37 +45,54 @@ def create_ticket(
     return ticket
 
 
-# Support Staff Endpoints
 @tickets.get("/assigned", response_model=List[TicketResponse])
 def get_assigned_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "support":
-        raise HTTPException(status_code=403, detail="Access denied. Only support staff can view assigned tickets.")
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. Only support staff can view assigned tickets.",
+        )
 
     tickets = db.query(Ticket).filter(Ticket.assigned_to == current_user.user_id).all()
+
+    if not tickets:
+        raise HTTPException(
+            status_code=404, detail="No tickets have been assigned to you yet."
+        )
+
     return tickets
 
-# admin Endpoints
+
 @tickets.get("/all", response_model=List[TicketResponse])
 def get_all_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access denied. Only admins can view all tickets.")
+        raise HTTPException(
+            status_code=403, detail="Access denied. Only admins can view all tickets."
+        )
 
     tickets = db.query(Ticket).all()
+
+    if not tickets:
+        raise HTTPException(status_code=404, detail="No tickets have been created yet.")
+
     return tickets
 
-# User Endpoints
+
 @tickets.get("/submitted", response_model=List[TicketResponse])
 def get_user_submitted_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     tickets = db.query(Ticket).filter(Ticket.assigned_by == current_user.user_id).all()
+
+    if not tickets:
+        raise HTTPException(
+            status_code=404, detail="You have not submitted any tickets yet."
+        )
+
     return tickets
 
 
