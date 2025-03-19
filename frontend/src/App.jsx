@@ -8,6 +8,9 @@ import DashLayout from "./components/__test__/DashLayout";
 import AdminDashboard from "./pages/__test__/admin/AdminDashboard";
 import StudentDashboard from "./pages/__test__/student/StudentDashboard";
 import SupportDashboard from "./pages/__test__/support/SupportDashboard";
+import SupportTickets from "./pages/__test__/support/SupportTickets";
+import SupportPerformance from "./pages/__test__/support/SupportPerformance";
+import Equation from "./pages/__test__/Equation";
 function App() {
   return (
     <Routes>
@@ -18,9 +21,9 @@ function App() {
       <Route path='/test/student/dashboard' element={<DashLayout content={<StudentDashboard/>}/>}/>
       <Route path='/test/support/dashboard' element={<DashLayout content={<SupportDashboard/>}/>}/>
       <Route path='/test/admin/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
-      <Route path='/regi' element={<Register/>}/>
-      <Route path='/ster' element={<Register/>}/>
-      <Route path='/er' element={<Register/>}/>
+      <Route path='/test/support/tickets' element={<DashLayout content={<SupportTickets/>}/>}/>
+      <Route path='/test/support/reports' element={<DashLayout content={<SupportPerformance/>}/>}/>
+      <Route path='/test/' element={<Equation/>}/>
       <Route path='/ter' element={<Register/>}/>
       {/*Auth Routes */}
 
