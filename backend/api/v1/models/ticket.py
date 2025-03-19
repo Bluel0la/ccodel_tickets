@@ -14,7 +14,7 @@ class Ticket(Base):
     status = Column(Enum("open", "in_progress", "resolved", "closed", name="status_enum"), default="open", nullable=False)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
     assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
-    assigned_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=False)
+    assigned_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
     closed_by = Column(UUID(as_uuid=True), ForeignKey("users.user_id"), nullable=True)
     category = Column(String, nullable=False)
     date_created = Column(DateTime, default=datetime.utcnow)

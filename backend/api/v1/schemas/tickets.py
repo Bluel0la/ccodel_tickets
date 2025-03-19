@@ -8,8 +8,12 @@ class TicketBase(BaseModel):
     priority: str  # "low", "medium", "high"
     category: str
 
-class TicketCreate(TicketBase):
-    assigned_by: UUID4  # ID of the user creating the ticket
+
+class TicketCreate(BaseModel):
+    subject: str
+    description: str
+    category: str
+
 
 class TicketUpdate(BaseModel):
     description: Optional[str] = None

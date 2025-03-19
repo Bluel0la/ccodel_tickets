@@ -8,19 +8,34 @@ from api.utils.authentication import get_current_user
 from api.v1.models.user import User
 from typing import List
 from datetime import datetime
-from api.utils.file_storage import upload_to_gcs  
 from api.v1.models.attachement import Attachment
+import shutil
+import os
+from pathlib import Path
+from api.db.database import SessionLocal
+from datetime import timedelta
 
 tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
+
 
 # Create a new ticket
 @tickets.post("/", response_model=TicketResponse)
 def create_ticket(
     ticket_data: TicketCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    ticket = Ticket(**ticket_data.dict(), assigned_by=current_user.user_id)
+    # Ensure students cannot set priority or assigned_by
+    ticket = Ticket(
+        subject=ticket_data.subject,
+        description=ticket_data.description,
+        category=ticket_data.category,
+        priority="low",  # Default priority is "low"
+        assigned_by=(
+            None if current_user.role == "student" else current_user.user_id
+        ),  # Blank for students
+    )
+
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
@@ -202,65 +217,108 @@ def cancel_ticket(
         raise HTTPException(status_code=403, detail="You do not have permission to cancel this ticket")
 
     ticket.status = "cancelled"
-    
+
     db.commit()
     db.refresh(ticket)
     return ticket
 
 # Add attachements
+# Storage directory for uploaded files
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
+
+
 @tickets.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
 def add_attachment(
     ticket_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     # Authorization: Only Admin, assigned support staff, or ticket creator can upload
-    if current_user.role != "admin" and current_user.user_id not in [ticket.assigned_by, ticket.assigned_to]:
-        raise HTTPException(status_code=403, detail="Unauthorized to upload attachments")
+    if current_user.role != "admin" and current_user.user_id not in [
+        ticket.assigned_by,
+        ticket.assigned_to,
+    ]:
+        raise HTTPException(
+            status_code=403, detail="Unauthorized to upload attachments"
+        )
 
-    # Upload file to GCS and get URL
-    file_url = upload_to_gcs(file, str(ticket_id))
+    # Save file locally
+    file_path = UPLOAD_DIR / f"{ticket_id}_{file.filename}"
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
     # Save to DB
-    attachment = Attachment(ticket_id=ticket_id, file_path=file_url)
+    attachment = Attachment(
+        ticket_id=ticket_id, file_path=str(file_path), uploaded_at=datetime.utcnow()
+    )
     db.add(attachment)
     db.commit()
     db.refresh(attachment)
 
     return attachment
 
+
+# ✅ Background Task to Delete Old Attachments
+def cleanup_old_attachments():
+    db: Session = SessionLocal()
+    try:
+        expiry_time = datetime.utcnow() - timedelta(
+            days=7
+        )  # Delete files older than 7 days
+        old_attachments = (
+            db.query(Attachment).filter(Attachment.uploaded_at < expiry_time).all()
+        )
+
+        for attachment in old_attachments:
+            file_path = Path(attachment.file_path)
+            if file_path.exists():
+                os.remove(file_path)  # Delete the file
+
+            db.delete(attachment)  # Remove from database
+
+        db.commit()
+    finally:
+        db.close()
+
+
 # View Attachments for tickets
 @tickets.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
 def get_ticket_attachments(
     ticket_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    # Fetch the ticket
+    # Fetch the ticket and its attachments in one query
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    # Role-based access control
+    # Access control logic
     if current_user.role == "admin":
-        # Admins can access any ticket's attachments
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
-    
+        pass  # Admins can access all attachments
     elif current_user.role == "support":
-        # Support staff can only access attachments for tickets assigned to them
         if ticket.assigned_to != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this ticket")
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
-
-    else:
-        # Regular users can only access attachments for their own submitted tickets
+            raise HTTPException(
+                status_code=403, detail="Access denied: Not assigned to this ticket"
+            )
+    else:  # Regular users
         if ticket.assigned_by != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Access denied: You did not create this ticket")
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+            raise HTTPException(
+                status_code=403, detail="Access denied: You did not create this ticket"
+            )
+
+    # Fetch attachments
+    attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+
+    if not attachments:
+        raise HTTPException(
+            status_code=404, detail="No attachments found for this ticket"
+        )
 
     return attachments
