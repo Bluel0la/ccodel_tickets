@@ -14,20 +14,29 @@ import SupportTickets from "./pages/__test__/support/SupportTickets";
 import SupportPerformance from "./pages/__test__/support/SupportPerformance";
 import Equation from "./pages/__test__/Equation";
 import Inbox from "./pages/student/Inbox";
+import StudentTicketCreation from "./pages/__test__/student/StudentTicketCreation";
+import StudentTickets from "./pages/__test__/student/StudentTickets";
 function App() {
   return (
     <Routes>
       {/*Auth Routes  I'm testing here, don't be scared*/}
       <Route path="/" element={<Login />} />
       <Route path='/register' element={<Register/>}/>
+
+      
       <Route path='/test/admin' element={<Register/>}/>
-      <Route path='/test/student/dashboard' element={<DashLayout content={<StudentDashboard/>}/>}/>
-      <Route path='/test/support/dashboard' element={<DashLayout content={<SupportDashboard/>}/>}/>
       <Route path='/test/admin/dashboard' element={<DashLayout content={<AdminDashboard/>}/>}/>
+
+
+      <Route path='/test/support/dashboard' element={<DashLayout content={<SupportDashboard/>}/>}/>
       <Route path='/test/support/tickets' element={<DashLayout content={<SupportTickets/>}/>}/>
       <Route path='/test/support/reports' element={<DashLayout content={<SupportPerformance/>}/>}/>
-      <Route path='/test/' element={<Equation/>}/>
-      <Route path='/ter' element={<Register/>}/>
+
+
+
+      <Route path='/test/student/dashboard' element={<DashLayout content={<StudentDashboard/>}/>}/>
+      <Route path='/test/student/tickets/ticket' element={<DashLayout content={<StudentTicketCreation/>}/>}/>
+      <Route path='/test/student/tickets' element={<DashLayout content={<StudentTickets/>}/>}/>
       {/*Auth Routes */}
 
       {/*Admin Routes */}
