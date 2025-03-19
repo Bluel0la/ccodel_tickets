@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum, Text, UUID
+from sqlalchemy import Column, String, ForeignKey, DateTime, Enum, Text, UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from api.db.database import Base
@@ -21,9 +21,9 @@ class Ticket(Base):
     date_resolved = Column(DateTime, nullable=True)
     date_closed = Column(DateTime, nullable=True)
 
-    assigned_to_user = relationship("User", foreign_keys=[assigned_to], backref="tickets_assigned")
-    assigned_by_user = relationship("User", foreign_keys=[assigned_by], backref="created_tickets")
-    closed_by_user = relationship("User", foreign_keys=[closed_by], backref="closed_tickets")
+    assigned_to_user = relationship("User", foreign_keys=[assigned_to], back_populates="tickets_assigned")
+    created_by_user = relationship("User", foreign_keys=[created_by], back_populates="tickets_created")
+    closed_by_user = relationship("User", foreign_keys=[closed_by], back_populates="tickets_closed")
 
     attachments = relationship("Attachment", back_populates="ticket", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="ticket", cascade="all, delete-orphan")
