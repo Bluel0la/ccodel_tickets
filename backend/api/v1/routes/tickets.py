@@ -11,10 +11,10 @@ from datetime import datetime
 from api.utils.file_storage import upload_to_gcs  
 from api.v1.models.attachement import Attachment
 
-router = APIRouter(prefix="/tickets", tags=["Tickets"])
+tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 # Create a new ticket
-@router.post("/", response_model=TicketResponse)
+@tickets.post("/", response_model=TicketResponse)
 def create_ticket(
     ticket_data: TicketCreate,
     db: Session = Depends(get_db),
@@ -28,7 +28,7 @@ def create_ticket(
 
 
 # Support Staff Endpoints
-@router.get("/assigned", response_model=List[TicketResponse])
+@tickets.get("/assigned", response_model=List[TicketResponse])
 def get_assigned_tickets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -40,7 +40,7 @@ def get_assigned_tickets(
     return tickets
 
 # admin Endpoints
-@router.get("/all", response_model=List[TicketResponse])
+@tickets.get("/all", response_model=List[TicketResponse])
 def get_all_tickets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -52,7 +52,7 @@ def get_all_tickets(
     return tickets
 
 # User Endpoints
-@router.get("/submitted", response_model=List[TicketResponse])
+@tickets.get("/submitted", response_model=List[TicketResponse])
 def get_user_submitted_tickets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -62,7 +62,7 @@ def get_user_submitted_tickets(
 
 
 # Get a specific ticket
-@router.get("/{ticket_id}", response_model=TicketResponse)
+@tickets.get("/{ticket_id}", response_model=TicketResponse)
 def get_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -90,7 +90,7 @@ def get_ticket(
 
 
 # Update ticket details
-@router.put("/{ticket_id}", response_model=TicketResponse)
+@tickets.put("/{ticket_id}", response_model=TicketResponse)
 def update_ticket(
     ticket_id: UUID,
     ticket_data: TicketUpdate,
@@ -138,7 +138,7 @@ def update_ticket(
     return ticket
 
 # Assign a ticket to a support agent
-@router.put("/{ticket_id}/assign", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/assign", response_model=TicketResponse)
 def assign_ticket(
     ticket_id: UUID,
     assign_data: TicketAssign,
@@ -164,7 +164,7 @@ def assign_ticket(
     return ticket
 
 # Close a ticket
-@router.put("/{ticket_id}/close", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/close", response_model=TicketResponse)
 def close_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -187,7 +187,7 @@ def close_ticket(
     return ticket
 
 # Delete a ticket (Admin only)
-@router.put("/{ticket_id}/cancel", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/cancel", response_model=TicketResponse)
 def cancel_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -208,7 +208,7 @@ def cancel_ticket(
     return ticket
 
 # Add attachements
-@router.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
+@tickets.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
 def add_attachment(
     ticket_id: UUID,
     file: UploadFile = File(...),
@@ -235,7 +235,7 @@ def add_attachment(
     return attachment
 
 # View Attachments for tickets
-@router.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
+@tickets.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
 def get_ticket_attachments(
     ticket_id: UUID,
     db: Session = Depends(get_db),

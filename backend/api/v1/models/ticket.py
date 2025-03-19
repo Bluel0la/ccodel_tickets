@@ -8,6 +8,7 @@ class Ticket(Base):
     __tablename__ = "tickets"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    subject = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     priority = Column(Enum("low", "medium", "high", name="priority_enum"), nullable=False)
     status = Column(Enum("open", "in_progress", "resolved", "closed", name="status_enum"), default="open", nullable=False)
