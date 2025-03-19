@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 
 class TicketBase(BaseModel):
+    subject: str
     description: str
     priority: str  # "low", "medium", "high"
     category: str
