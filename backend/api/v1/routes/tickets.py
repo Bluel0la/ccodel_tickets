@@ -203,7 +203,7 @@ def assign_ticket(
 
     return {
         "message": f"Ticket successfully assigned to {assigned_user.first_name} {assigned_user.last_name} (Support Staff).",
-        "ticket": ticket,
+        "ticket": TicketResponse.from_orm(ticket),  # ✅ Convert to Pydantic model
     }
 
 
