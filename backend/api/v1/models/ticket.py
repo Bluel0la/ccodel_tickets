@@ -21,7 +21,7 @@ class Ticket(Base):
     date_resolved = Column(DateTime, nullable=True)
     date_closed = Column(DateTime, nullable=True)
 
-    assigned_to_user = relationship("User", foreign_keys=[assigned_to], backref="assigned_tickets")
+    assigned_to_user = relationship("User", foreign_keys=[assigned_to], backref="tickets_assigned")
     assigned_by_user = relationship("User", foreign_keys=[assigned_by], backref="created_tickets")
     closed_by_user = relationship("User", foreign_keys=[closed_by], backref="closed_tickets")
 

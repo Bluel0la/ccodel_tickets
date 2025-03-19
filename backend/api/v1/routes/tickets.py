@@ -34,6 +34,9 @@ def create_ticket(
         assigned_by=(
             None if current_user.role == "student" else current_user.user_id
         ),  # Blank for students
+        created_by=current_user.user_id,
+        date_created=datetime.utcnow(),
+        status="open",
     )
 
     db.add(ticket)
