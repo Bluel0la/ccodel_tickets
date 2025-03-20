@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from api.db.database import get_db
 from api.v1.models.ticket import Ticket
@@ -10,19 +10,25 @@ from typing import List, Dict, Any
 from datetime import datetime
 from api.v1.models.attachement import Attachment
 import shutil
-import os
 from pathlib import Path
 from api.db.database import SessionLocal
-from datetime import timedelta
 import uuid
 from api.v1.models.comment import Comment
+
 tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+
+# Add attachements
+# Storage directory for uploaded files
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
 
 
 # Create a new ticket
 @tickets.post("/", response_model=TicketResponse)
 def create_ticket(
     ticket_data: TicketCreate,
+    attachments: List[UploadFile] = File(None),  # ✅ Accept multiple files
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -43,7 +49,26 @@ def create_ticket(
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
-    return ticket
+
+    # ✅ Handle Attachments (if provided)
+    if attachments:
+        saved_attachments = []
+        for file in attachments:
+            file_path = UPLOAD_DIR / f"{ticket.id}_{file.filename}"
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            attachment = Attachment(
+                ticket_id=ticket.id, file_path=str(file_path), uploaded_at=datetime.utcnow()
+            )
+            db.add(attachment)
+            saved_attachments.append(attachment)
+
+        db.commit()
+        for attachment in saved_attachments:
+            db.refresh(attachment)
+
+    return ticket  # ✅ Returns ticket, attachments can be fetched separately
 
 
 @tickets.get("/assigned", response_model=List[TicketResponse])
@@ -253,71 +278,6 @@ def cancel_ticket(
     db.refresh(ticket)
     return ticket
 
-# Add attachements
-# Storage directory for uploaded files
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
-
-
-@tickets.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
-def add_attachment(
-    ticket_id: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
-):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    # Authorization: Only Admin, assigned support staff, or ticket creator can upload
-    if current_user.role != "admin" and current_user.user_id not in [
-        ticket.assigned_by,
-        ticket.assigned_to,
-    ]:
-        raise HTTPException(
-            status_code=403, detail="Unauthorized to upload attachments"
-        )
-
-    # Save file locally
-    file_path = UPLOAD_DIR / f"{ticket_id}_{file.filename}"
-    with file_path.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Save to DB
-    attachment = Attachment(
-        ticket_id=ticket_id, file_path=str(file_path), uploaded_at=datetime.utcnow()
-    )
-    db.add(attachment)
-    db.commit()
-    db.refresh(attachment)
-
-    return attachment
-
-
-# ✅ Background Task to Delete Old Attachments
-def cleanup_old_attachments():
-    db: Session = SessionLocal()
-    try:
-        expiry_time = datetime.utcnow() - timedelta(
-            days=7
-        )  # Delete files older than 7 days
-        old_attachments = (
-            db.query(Attachment).filter(Attachment.uploaded_at < expiry_time).all()
-        )
-
-        for attachment in old_attachments:
-            file_path = Path(attachment.file_path)
-            if file_path.exists():
-                os.remove(file_path)  # Delete the file
-
-            db.delete(attachment)  # Remove from database
-
-        db.commit()
-    finally:
-        db.close()
-
-
 # View Attachments for tickets
 @tickets.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
 def get_ticket_attachments(
@@ -325,34 +285,33 @@ def get_ticket_attachments(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Fetch the ticket and its attachments in one query
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    # Fetch ticket and attachments in one query
+    ticket = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.attachments))  # ✅ Preload attachments
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    # Access control logic
-    if current_user.role == "admin":
-        pass  # Admins can access all attachments
-    elif current_user.role == "support":
-        if ticket.assigned_to != current_user.user_id:
+    # ✅ Access control checks (Admins can always access)
+    if current_user.role != "admin":
+        if (
+            current_user.role == "support"
+            and ticket.assigned_to != current_user.user_id
+        ):
             raise HTTPException(
                 status_code=403, detail="Access denied: Not assigned to this ticket"
             )
-    else:  # Regular users
-        if ticket.assigned_by != current_user.user_id:
+        if current_user.role != "support" and ticket.created_by != current_user.user_id:
             raise HTTPException(
                 status_code=403, detail="Access denied: You did not create this ticket"
             )
 
-    # Fetch attachments
-    attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
-
-    if not attachments:
-        raise HTTPException(
-            status_code=404, detail="No attachments found for this ticket"
-        )
-
-    return attachments
+    # ✅ Return ticket attachments directly
+    return ticket.attachments if ticket.attachments else []
 
 
 # Chat Endpoints

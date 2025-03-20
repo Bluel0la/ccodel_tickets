@@ -6,7 +6,6 @@ from api.v1.models.user import User  # Assuming you have a User model
 from api.utils.authentication import get_current_user  
 from sqlalchemy.sql import func
 from datetime import datetime, timedelta
-from typing import List
 
 analytics = APIRouter()
 
