@@ -27,7 +27,7 @@ class TicketResponse(TicketBase):
     id: UUID4
     status: str
     assigned_to: Optional[UUID4] = None
-    assigned_by: UUID4
+    assigned_by: Optional[UUID4]
     closed_by: Optional[UUID4] = None
     date_created: datetime
     date_resolved: Optional[datetime] = None

@@ -1,7 +1,9 @@
-from sqlalchemy import Column, String, Enum, UUID, Boolean
+from sqlalchemy import Column, String, Enum, UUID, Boolean, DateTime
 from sqlalchemy.orm import relationship
 import uuid
 from api.db.database import Base
+from datetime import datetime
+
 
 class User(Base):
     __tablename__ = "users"
@@ -14,6 +16,8 @@ class User(Base):
     last_name = Column(String(255), nullable=False)
     role = Column(Enum("admin", "support", "student", name="role_enum"), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    last_active = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     tickets_assigned = relationship("Ticket", back_populates="assigned_to_user", foreign_keys="[Ticket.assigned_to]")
     tickets_created = relationship("Ticket", back_populates="created_by_user", foreign_keys="[Ticket.created_by]")

@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from api.db.database import SessionLocal
 from datetime import timedelta
+import uuid
+from api.v1.models.comment import Comment
 tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 
@@ -351,3 +353,76 @@ def get_ticket_attachments(
         )
 
     return attachments
+
+
+# Chat Endpoints
+@tickets.post("/{ticket_id}/comments", status_code=201)
+def add_comment(
+    ticket_id: uuid.UUID,
+    message: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Allow assigned support staff or the student who created the ticket to add a comment."""
+
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+
+    # Ensure only the assigned support staff or the ticket creator can comment
+    if current_user.user_id not in [ticket.assigned_to, ticket.created_by]:
+        raise HTTPException(
+            status_code=403, detail="You do not have access to this ticket."
+        )
+
+    comment = Comment(
+        id=uuid.uuid4(),
+        ticket_id=ticket_id,
+        user_id=current_user.user_id,
+        message=message,
+        timestamp=datetime.utcnow(),
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return {"message": "Comment added successfully.", "comment_id": comment.id}
+
+
+@tickets.get("/{ticket_id}/comments")
+def get_comments(
+    ticket_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retrieve all comments for a ticket (visible to the assigned support staff and student)."""
+
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+
+    # Ensure only the assigned support staff or the ticket creator can view comments
+    if current_user.user_id not in [ticket.assigned_to, ticket.created_by]:
+        raise HTTPException(
+            status_code=403, detail="You do not have access to this ticket."
+        )
+
+    comments = (
+        db.query(Comment)
+        .filter(Comment.ticket_id == ticket_id)
+        .order_by(Comment.timestamp.asc())
+        .all()
+    )
+
+    return {
+        "ticket_id": ticket_id,
+        "comments": [
+            {
+                "id": c.id,
+                "user_id": c.user_id,
+                "message": c.message,
+                "timestamp": c.timestamp.isoformat(),
+            }
+            for c in comments
+        ],
+    }

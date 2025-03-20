@@ -8,6 +8,8 @@ from api.db.database import create_database
 from api.v1.routes import api_version_one
 from dotenv import load_dotenv
 import os
+from datetime import datetime
+from api.db.database import get_db
 
 load_dotenv(".env")
 
@@ -23,6 +25,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+@app.middleware("http")
+async def update_last_active(request: Request, call_next):
+    response = await call_next(request)
+
+    user = request.state.user
+    if user and user.role == "support":
+        db = next(get_db())
+        user.last_active = datetime.utcnow()
+        db.commit()
+
+    return response
 
 
 origins = [
