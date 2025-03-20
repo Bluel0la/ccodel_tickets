@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from api.db.database import get_db
@@ -6,7 +6,7 @@ from api.v1.models.ticket import Ticket
 from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse
 from api.utils.authentication import get_current_user
 from api.v1.models.user import User
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from api.v1.models.attachement import Attachment
 import shutil
@@ -14,7 +14,7 @@ from pathlib import Path
 from api.db.database import SessionLocal
 import uuid
 from api.v1.models.comment import Comment
-
+import json
 tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
 
 
@@ -27,20 +27,26 @@ UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
 # Create a new ticket
 @tickets.post("/", response_model=TicketResponse)
 def create_ticket(
-    ticket_data: TicketCreate,
-    attachments: List[UploadFile] = File(None),  # ✅ Accept multiple files
+    ticket_data: str = Form(...),  # Receive as string from form-data
+    attachments: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Ensure students cannot set priority or assigned_by
+    # ✅ Parse the JSON string into a dictionary
+    try:
+        ticket_data = json.loads(ticket_data)
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=400, detail="Invalid JSON format in ticket_data"
+        )
+
+    # Create the ticket
     ticket = Ticket(
-        subject=ticket_data.subject,
-        description=ticket_data.description,
-        category=ticket_data.category,
-        priority="low",  # Default priority is "low"
-        assigned_by=(
-            None if current_user.role == "student" else current_user.user_id
-        ),  # Blank for students
+        subject=ticket_data["subject"],
+        description=ticket_data["description"],
+        category=ticket_data["category"],
+        priority="low",
+        assigned_by=None if current_user.role == "student" else current_user.user_id,
         created_by=current_user.user_id,
         date_created=datetime.utcnow(),
         status="open",
@@ -59,7 +65,9 @@ def create_ticket(
                 shutil.copyfileobj(file.file, buffer)
 
             attachment = Attachment(
-                ticket_id=ticket.id, file_path=str(file_path), uploaded_at=datetime.utcnow()
+                ticket_id=ticket.id,
+                file_path=str(file_path),
+                uploaded_at=datetime.utcnow(),
             )
             db.add(attachment)
             saved_attachments.append(attachment)
@@ -68,7 +76,7 @@ def create_ticket(
         for attachment in saved_attachments:
             db.refresh(attachment)
 
-    return ticket  # ✅ Returns ticket, attachments can be fetched separately
+    return ticket
 
 
 @tickets.get("/assigned", response_model=List[TicketResponse])
