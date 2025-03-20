@@ -47,13 +47,13 @@ app.add_middleware(AuthMiddleware)  # ✅ Apply Middleware Here
 ## ✅  Fix `update_last_active`
 @app.middleware("http")
 async def update_last_active(request: Request, call_next):
-    """Middleware to update last active time for support staff"""
     response = await call_next(request)
 
-    user = getattr(request.state, "user", None)  # ✅ Use `getattr` to prevent crashes
-    db = next(get_db())  # Get DB session
-    user.last_active = datetime.utcnow()
-    db.commit()
+    user = getattr(request.state, "user", None)  # ✅ Use `getattr` to avoid errors
+    if user and getattr(user, "role", None) == "support":  # ✅ Safely check attributes
+        db = next(get_db())
+        user.last_active = datetime.utcnow()
+        db.commit()
 
     return response
 
