@@ -242,29 +242,6 @@ def assign_ticket(
     }
 
 
-# Close a ticket
-@tickets.put("/{ticket_id}/close", response_model=TicketResponse)
-def close_ticket(
-    ticket_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    # Only allow admin or the assigned support staff to close the ticket
-    if current_user.role != "admin" and ticket.assigned_to != current_user.user_id:
-        raise HTTPException(status_code=403, detail="You do not have permission to close this ticket")
-
-    ticket.status = "closed"
-    ticket.closed_by = current_user.user_id
-    ticket.date_closed = datetime.utcnow()
-
-    db.commit()
-    db.refresh(ticket)
-    return ticket
-
 
 @tickets.put("/{ticket_id}/cancel", response_model=TicketResponse)
 def cancel_ticket(
@@ -291,6 +268,7 @@ def cancel_ticket(
         )
 
     ticket.status = "closed"
+    ticket.closed_by = current_user.user_id
     ticket.date_closed = datetime.utcnow()  # Optional: mark when it was cancelled
 
     db.commit()
