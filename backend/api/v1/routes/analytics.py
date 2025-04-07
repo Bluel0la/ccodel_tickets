@@ -140,7 +140,7 @@ def get_tickets_summary(
             .count(),
             "total_resolved_tickets": db.query(Ticket)
             .filter(
-                Ticket.priority == "resolved", Ticket.created_by == current_user.user_id
+                Ticket.status == "resolved", Ticket.created_by == current_user.user_id
             )
             .count(),
         }
