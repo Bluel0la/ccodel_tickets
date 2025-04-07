@@ -265,7 +265,6 @@ def close_ticket(
     db.refresh(ticket)
     return ticket
 
-# Delete a ticket (Admin only)
 @tickets.put("/{ticket_id}/cancel", response_model=TicketResponse)
 def cancel_ticket(
     ticket_id: UUID,
@@ -277,7 +276,7 @@ def cancel_ticket(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     # Only the ticket creator or an admin can cancel the ticket
-    if current_user.role != "admin" and ticket.assigned_by != current_user.user_id:
+    if current_user.role != "admin" or ticket.assigned_by != current_user.user_id:
         raise HTTPException(status_code=403, detail="You do not have permission to cancel this ticket")
 
     ticket.status = "cancelled"
