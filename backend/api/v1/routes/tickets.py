@@ -120,7 +120,7 @@ def get_all_tickets(
 def get_user_submitted_tickets(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    tickets = db.query(Ticket).filter(Ticket.assigned_by == current_user.user_id).all()
+    tickets = db.query(Ticket).filter(Ticket.created_by == current_user.user_id).all()
 
     if not tickets:
         raise HTTPException(
