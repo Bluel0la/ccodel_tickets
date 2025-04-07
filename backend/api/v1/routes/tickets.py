@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from api.db.database import get_db
 from api.v1.models.ticket import Ticket
-from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse
+from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse, CommentCreate
 from api.utils.authentication import get_current_user
 from api.v1.models.user import User
 from typing import List, Dict, Any, Optional
@@ -326,7 +326,7 @@ def get_ticket_attachments(
 @tickets.post("/{ticket_id}/comments", status_code=201)
 def add_comment(
     ticket_id: uuid.UUID,
-    message: str,
+    comment_data: CommentCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -346,7 +346,7 @@ def add_comment(
         id=uuid.uuid4(),
         ticket_id=ticket_id,
         user_id=current_user.user_id,
-        message=message,
+        message=comment_data.message,
         timestamp=datetime.utcnow(),
     )
     db.add(comment)

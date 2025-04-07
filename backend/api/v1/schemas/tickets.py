@@ -69,9 +69,10 @@ class AttachmentResponse(AttachmentBase):
 class CommentBase(BaseModel):
     message: str
 
-class CommentCreate(CommentBase):
-    ticket_id: UUID4
-    user_id: UUID4
+
+class CommentCreate(BaseModel):
+    message: str
+
 
 class CommentResponse(CommentBase):
     id: UUID4
