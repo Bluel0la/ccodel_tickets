@@ -260,30 +260,43 @@ def close_ticket(
     ticket.status = "closed"
     ticket.closed_by = current_user.user_id
     ticket.date_closed = datetime.utcnow()
-    
+
     db.commit()
     db.refresh(ticket)
     return ticket
+
 
 @tickets.put("/{ticket_id}/cancel", response_model=TicketResponse)
 def cancel_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    # Only the ticket creator or an admin can cancel the ticket
-    if current_user.role != "admin" or ticket.assigned_by != current_user.user_id:
-        raise HTTPException(status_code=403, detail="You do not have permission to cancel this ticket")
+    # Only allow the creator or an admin to cancel the ticket
+    if (
+        current_user.role not in ["admin", "support"]
+        and ticket.created_by != current_user.user_id
+    ):
+        raise HTTPException(
+            status_code=403, detail="You do not have permission to cancel this ticket"
+        )
+
+    if ticket.status in ["cancelled", "closed"]:
+        raise HTTPException(
+            status_code=400, detail="Ticket is already cancelled or closed"
+        )
 
     ticket.status = "cancelled"
+    ticket.date_closed = datetime.utcnow()  # Optional: mark when it was cancelled
 
     db.commit()
     db.refresh(ticket)
     return ticket
+
 
 # View Attachments for tickets
 @tickets.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
