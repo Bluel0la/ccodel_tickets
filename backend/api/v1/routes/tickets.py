@@ -285,12 +285,12 @@ def cancel_ticket(
             status_code=403, detail="You do not have permission to cancel this ticket"
         )
 
-    if ticket.status in ["cancelled", "closed"]:
+    if ticket.status in ["closed"]:
         raise HTTPException(
             status_code=400, detail="Ticket is already cancelled or closed"
         )
 
-    ticket.status = "cancelled"
+    ticket.status = "closed"
     ticket.date_closed = datetime.utcnow()  # Optional: mark when it was cancelled
 
     db.commit()
