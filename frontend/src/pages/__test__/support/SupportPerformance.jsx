@@ -8,10 +8,10 @@ const SupportPerformance = () => {
     { title: "Pending Tickets", value: 35, icon: <FiAlertTriangle size={28} /> },
     
   ];
-const stats2 = [{ title: "High-Priority Tickets Resolved", value: 18, icon: <FiTrendingUp size={28} /> },
+const stats2 = [
     { title: "Resolution Rate", value: "85%", icon: <FiCheckCircle size={28} /> },
     { title: "Tickets Escalated", value: 12, icon: <FiAlertTriangle size={28} /> },
-    { title: "Pending vs Resolved Tickets", value: "35 / 210", icon: <FiBarChart2 size={28} /> },]
+  ]
   const topAgents = [
     { name: "John Doe", ticketsResolved: 50 },
     { name: "Sarah Smith", ticketsResolved: 45 },
@@ -32,7 +32,7 @@ const stats2 = [{ title: "High-Priority Tickets Resolved", value: 18, icon: <FiT
   ];
 
   return (
-    <div className="px-6 pb-6 transition-all duration-300 w-full grid grid-cols-1 md:grid-cols-6 gap-6">
+    <div className="px-6 pb-6 transition-all duration-300 w-full grid grid-cols-1 md:grid-cols-5 gap-6">
       {/* Stats Cards */}
       {stats.map((stat, index) => (
         <div key={index} className="p-6 bg-[#3b4794] text-white border border-gray-200 rounded-lg shadow-sm flex flex-col justify-center items-center md:col-span-[1.5]">
