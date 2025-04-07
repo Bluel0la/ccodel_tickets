@@ -1,68 +1,137 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 from api.db.database import get_db
 from api.v1.models.ticket import Ticket
-from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse
+from api.v1.schemas.tickets import TicketCreate, TicketResponse, TicketUpdate, TicketAssign, AttachmentResponse, CommentCreate
 from api.utils.authentication import get_current_user
 from api.v1.models.user import User
-from typing import List
+from typing import List, Dict, Any, Optional
 from datetime import datetime
-from api.utils.file_storage import upload_to_gcs  
 from api.v1.models.attachement import Attachment
+import shutil
+from pathlib import Path
+from api.db.database import SessionLocal
+import uuid
+from api.v1.models.comment import Comment
+import json
+tickets = APIRouter(prefix="/tickets", tags=["Tickets"])
 
-router = APIRouter(prefix="/tickets", tags=["Tickets"])
+
+# Add attachements
+# Storage directory for uploaded files
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
+
 
 # Create a new ticket
-@router.post("/", response_model=TicketResponse)
+@tickets.post("/", response_model=TicketResponse)
 def create_ticket(
-    ticket_data: TicketCreate,
+    ticket_data: str = Form(...),  # Receive as string from form-data
+    attachments: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    ticket = Ticket(**ticket_data.dict(), assigned_by=current_user.user_id)
+    # ✅ Parse the JSON string into a dictionary
+    try:
+        ticket_data = json.loads(ticket_data)
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=400, detail="Invalid JSON format in ticket_data"
+        )
+
+    # Create the ticket
+    ticket = Ticket(
+        subject=ticket_data["subject"],
+        description=ticket_data["description"],
+        category=ticket_data["category"],
+        priority="low",
+        assigned_by=None if current_user.role == "student" else current_user.user_id,
+        created_by=current_user.user_id,
+        date_created=datetime.utcnow(),
+        status="open",
+    )
+
     db.add(ticket)
     db.commit()
     db.refresh(ticket)
+
+    # ✅ Handle Attachments (if provided)
+    if attachments:
+        saved_attachments = []
+        for file in attachments:
+            file_path = UPLOAD_DIR / f"{ticket.id}_{file.filename}"
+            with file_path.open("wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            attachment = Attachment(
+                ticket_id=ticket.id,
+                file_path=str(file_path),
+                uploaded_at=datetime.utcnow(),
+            )
+            db.add(attachment)
+            saved_attachments.append(attachment)
+
+        db.commit()
+        for attachment in saved_attachments:
+            db.refresh(attachment)
+
     return ticket
 
 
-# Support Staff Endpoints
-@router.get("/assigned", response_model=List[TicketResponse])
+@tickets.get("/assigned", response_model=List[TicketResponse])
 def get_assigned_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "support":
-        raise HTTPException(status_code=403, detail="Access denied. Only support staff can view assigned tickets.")
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. Only support staff can view assigned tickets.",
+        )
 
     tickets = db.query(Ticket).filter(Ticket.assigned_to == current_user.user_id).all()
+
+    if not tickets:
+        raise HTTPException(
+            status_code=404, detail="No tickets have been assigned to you yet."
+        )
+
     return tickets
 
-# admin Endpoints
-@router.get("/all", response_model=List[TicketResponse])
+
+@tickets.get("/all", response_model=List[TicketResponse])
 def get_all_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Access denied. Only admins can view all tickets.")
+        raise HTTPException(
+            status_code=403, detail="Access denied. Only admins can view all tickets."
+        )
 
     tickets = db.query(Ticket).all()
+
+    if not tickets:
+        raise HTTPException(status_code=404, detail="No tickets have been created yet.")
+
     return tickets
 
-# User Endpoints
-@router.get("/submitted", response_model=List[TicketResponse])
+
+@tickets.get("/submitted", response_model=List[TicketResponse])
 def get_user_submitted_tickets(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    tickets = db.query(Ticket).filter(Ticket.assigned_by == current_user.user_id).all()
+    tickets = db.query(Ticket).filter(Ticket.created_by == current_user.user_id).all()
+
+    if not tickets:
+        raise HTTPException(
+            status_code=404, detail="You have not submitted any tickets yet."
+        )
+
     return tickets
 
 
 # Get a specific ticket
-@router.get("/{ticket_id}", response_model=TicketResponse)
+@tickets.get("/{ticket_id}", response_model=TicketResponse)
 def get_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -90,7 +159,7 @@ def get_ticket(
 
 
 # Update ticket details
-@router.put("/{ticket_id}", response_model=TicketResponse)
+@tickets.put("/{ticket_id}", response_model=TicketResponse)
 def update_ticket(
     ticket_id: UUID,
     ticket_data: TicketUpdate,
@@ -137,13 +206,14 @@ def update_ticket(
     db.refresh(ticket)
     return ticket
 
+
 # Assign a ticket to a support agent
-@router.put("/{ticket_id}/assign", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/assign", response_model=Dict[str, Any])
 def assign_ticket(
     ticket_id: UUID,
     assign_data: TicketAssign,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)  # Get the current user
+    current_user: User = Depends(get_current_user),  # Get the current user
 ):
     # Ensure only admins can assign tickets
     if current_user.role != "admin":
@@ -154,17 +224,26 @@ def assign_ticket(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     # Ensure the assigned user is a support staff
-    assigned_user = db.query(User).filter(User.user_id == assign_data.assigned_to).first()
+    assigned_user = (
+        db.query(User).filter(User.user_id == assign_data.assigned_to).first()
+    )
     if not assigned_user or assigned_user.role != "support":
-        raise HTTPException(status_code=400, detail="Tickets can only be assigned to support staff.")
+        raise HTTPException(
+            status_code=400, detail="Tickets can only be assigned to support staff."
+        )
 
     ticket.assigned_to = assign_data.assigned_to
     db.commit()
     db.refresh(ticket)
-    return ticket
+
+    return {
+        "message": f"Ticket successfully assigned to {assigned_user.first_name} {assigned_user.last_name} (Support Staff).",
+        "ticket": TicketResponse.from_orm(ticket),  # ✅ Convert to Pydantic model
+    }
+
 
 # Close a ticket
-@router.put("/{ticket_id}/close", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/close", response_model=TicketResponse)
 def close_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -186,8 +265,7 @@ def close_ticket(
     db.refresh(ticket)
     return ticket
 
-# Delete a ticket (Admin only)
-@router.put("/{ticket_id}/cancel", response_model=TicketResponse)
+@tickets.put("/{ticket_id}/cancel", response_model=TicketResponse)
 def cancel_ticket(
     ticket_id: UUID,
     db: Session = Depends(get_db),
@@ -198,69 +276,119 @@ def cancel_ticket(
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     # Only the ticket creator or an admin can cancel the ticket
-    if current_user.role != "admin" and ticket.assigned_by != current_user.user_id:
+    if current_user.role != "admin" or ticket.assigned_by != current_user.user_id:
         raise HTTPException(status_code=403, detail="You do not have permission to cancel this ticket")
 
     ticket.status = "cancelled"
-    
+
     db.commit()
     db.refresh(ticket)
     return ticket
 
-# Add attachements
-@router.post("/{ticket_id}/attachments", response_model=AttachmentResponse)
-def add_attachment(
-    ticket_id: UUID,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
-    if not ticket:
-        raise HTTPException(status_code=404, detail="Ticket not found")
-
-    # Authorization: Only Admin, assigned support staff, or ticket creator can upload
-    if current_user.role != "admin" and current_user.user_id not in [ticket.assigned_by, ticket.assigned_to]:
-        raise HTTPException(status_code=403, detail="Unauthorized to upload attachments")
-
-    # Upload file to GCS and get URL
-    file_url = upload_to_gcs(file, str(ticket_id))
-
-    # Save to DB
-    attachment = Attachment(ticket_id=ticket_id, file_path=file_url)
-    db.add(attachment)
-    db.commit()
-    db.refresh(attachment)
-
-    return attachment
-
 # View Attachments for tickets
-@router.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
+@tickets.get("/{ticket_id}/attachments", response_model=List[AttachmentResponse])
 def get_ticket_attachments(
     ticket_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    # Fetch the ticket
-    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    # Fetch ticket and attachments in one query
+    ticket = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.attachments))  # ✅ Preload attachments
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
-    # Role-based access control
-    if current_user.role == "admin":
-        # Admins can access any ticket's attachments
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
-    
-    elif current_user.role == "support":
-        # Support staff can only access attachments for tickets assigned to them
-        if ticket.assigned_to != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this ticket")
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+    # ✅ Access control checks (Admins can always access)
+    if current_user.role != "admin":
+        if (
+            current_user.role == "support"
+            and ticket.assigned_to != current_user.user_id
+        ):
+            raise HTTPException(
+                status_code=403, detail="Access denied: Not assigned to this ticket"
+            )
+        if current_user.role != "support" and ticket.created_by != current_user.user_id:
+            raise HTTPException(
+                status_code=403, detail="Access denied: You did not create this ticket"
+            )
 
-    else:
-        # Regular users can only access attachments for their own submitted tickets
-        if ticket.assigned_by != current_user.user_id:
-            raise HTTPException(status_code=403, detail="Access denied: You did not create this ticket")
-        attachments = db.query(Attachment).filter(Attachment.ticket_id == ticket_id).all()
+    # ✅ Return ticket attachments directly
+    return ticket.attachments if ticket.attachments else []
 
-    return attachments
+
+# Chat Endpoints
+@tickets.post("/{ticket_id}/comments", status_code=201)
+def add_comment(
+    ticket_id: uuid.UUID,
+    comment_data: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Allow assigned support staff or the student who created the ticket to add a comment."""
+
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+
+    # Ensure only the assigned support staff or the ticket creator can comment
+    if current_user.user_id not in [ticket.assigned_to, ticket.created_by]:
+        raise HTTPException(
+            status_code=403, detail="You do not have access to this ticket."
+        )
+
+    comment = Comment(
+        id=uuid.uuid4(),
+        ticket_id=ticket_id,
+        user_id=current_user.user_id,
+        message=comment_data.message,
+        timestamp=datetime.utcnow(),
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return {"message": "Comment added successfully.", "comment_id": comment.id}
+
+
+@tickets.get("/{ticket_id}/comments")
+def get_comments(
+    ticket_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retrieve all comments for a ticket (visible to the assigned support staff and student)."""
+
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found.")
+
+    # Ensure only the assigned support staff or the ticket creator can view comments
+    if current_user.user_id not in [ticket.assigned_to, ticket.created_by]:
+        raise HTTPException(
+            status_code=403, detail="You do not have access to this ticket."
+        )
+
+    comments = (
+        db.query(Comment)
+        .filter(Comment.ticket_id == ticket_id)
+        .order_by(Comment.timestamp.asc())
+        .all()
+    )
+
+    return {
+        "ticket_id": ticket_id,
+        "comments": [
+            {
+                "id": c.id,
+                "user_id": c.user_id,
+                "message": c.message,
+                "timestamp": c.timestamp.isoformat(),
+            }
+            for c in comments
+        ],
+    }

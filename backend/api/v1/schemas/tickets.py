@@ -3,12 +3,17 @@ from datetime import datetime
 from typing import Optional, List
 
 class TicketBase(BaseModel):
+    subject: str
     description: str
     priority: str  # "low", "medium", "high"
     category: str
 
-class TicketCreate(TicketBase):
-    assigned_by: UUID4  # ID of the user creating the ticket
+
+class TicketCreate(BaseModel):
+    subject: str
+    description: str
+    category: str
+
 
 class TicketUpdate(BaseModel):
     description: Optional[str] = None
@@ -22,7 +27,7 @@ class TicketResponse(TicketBase):
     id: UUID4
     status: str
     assigned_to: Optional[UUID4] = None
-    assigned_by: UUID4
+    assigned_by: Optional[UUID4]
     closed_by: Optional[UUID4] = None
     date_created: datetime
     date_resolved: Optional[datetime] = None
@@ -64,9 +69,10 @@ class AttachmentResponse(AttachmentBase):
 class CommentBase(BaseModel):
     message: str
 
-class CommentCreate(CommentBase):
-    ticket_id: UUID4
-    user_id: UUID4
+
+class CommentCreate(BaseModel):
+    message: str
+
 
 class CommentResponse(CommentBase):
     id: UUID4
