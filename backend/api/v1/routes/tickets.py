@@ -27,7 +27,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)  # Ensure directory exists
 # Create a new ticket
 @tickets.post("/", response_model=TicketResponse)
 def create_ticket(
-    ticket_data: TicketCreate,  # Receive as string from form-data
+    ticket_data: str = Form(...),  # Receive as string from form-data
     attachments: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -42,9 +42,9 @@ def create_ticket(
 
     # Create the ticket
     ticket = Ticket(
-        subject=ticket_data.subject,
-        description=ticket_data.description,
-        category=ticket_data.category,
+        subject=ticket_data["subject"],
+        description=ticket_data["description"],
+        category=ticket_data["category"],
         priority="low",
         assigned_by=None if current_user.role == "student" else current_user.user_id,
         created_by=current_user.user_id,
