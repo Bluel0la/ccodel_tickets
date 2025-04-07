@@ -126,6 +126,24 @@ def get_tickets_summary(
             )
             .count(),
         }
+        
+    elif current_user.role == "student":
+        return{
+            "total_open_tickets": db.query(Ticket)
+            .filter(Ticket.status == "open", Ticket.created_by == current_user.user_id)
+            .count(),
+            "total_in_progress_tickets": db.query(Ticket)
+            .filter(
+                Ticket.status == "in_progress",
+                Ticket.created_by == current_user.user_id,
+            )
+            .count(),
+            "total_resolved_tickets": db.query(Ticket)
+            .filter(
+                Ticket.priority == "resolved", Ticket.created_by == current_user.user_id
+            )
+            .count(),
+        }
 
     else:
         raise HTTPException(status_code=403, detail="Access denied.")
