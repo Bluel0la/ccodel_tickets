@@ -1,47 +1,70 @@
-from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
-from sqlalchemy.orm import Session
-from api.db.database import get_db  
-from api.v1.models.user import User 
-from api.v1.schemas.UserRegister import UserCreate, UserSignin
-from api.utils.authentication import hash_password, verify_password, create_access_token, decode_access_token
-from api.utils.cleanup import cleanup_expired_tokens
-from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
-import os
-from api.v1.models.revoked_tokens import RevokedToken
-from api.v1.models.refresh_tokens import RefreshToken
-from jose import jwt, JWTError
-from datetime import timedelta, timezone, datetime
+from datetime import datetime, timedelta
+from typing import Optional
 
-load_dotenv(".env")
-ALGORITHM = os.getenv("ALGORITHM")
-SECRET_KEY = os.getenv("SECRET")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from api.core.config import get_settings
+from api.core.dependencies import get_current_user
+from api.db.database import get_db
+from api.utils.authentication import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_password,
+)
+from api.v1.models.refresh_tokens import RefreshToken
+from api.v1.models.revoked_tokens import RevokedToken
+from api.v1.models.user import User
+from api.v1.schemas.UserRegister import UserCreate, UserSignin
 
 auth = APIRouter(prefix="/auth", tags=["Authentication"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
+def _token_expiry(payload: dict) -> datetime:
+    expires_at = payload.get("exp")
+    if not expires_at:
+        return datetime.utcnow() + timedelta(days=1)
+    return datetime.utcfromtimestamp(int(expires_at))
+
 
 @auth.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
-    # Check if email or username already exists
-    existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.matric_number == user_data.matric_number)
-    ).first()
-    
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email or Matric No. already registered")
-    
-    # Hash password
-    hashed_pwd = hash_password(user_data.password)
+    email = user_data.email.lower()
+    existing_user = (
+        db.query(User)
+        .filter(
+            (func.lower(User.email) == email)
+            | (User.matric_number == user_data.matric_number)
+        )
+        .first()
+    )
 
-    # Create new user
+    if existing_user:
+        raise HTTPException(
+            status_code=400, detail="Email or Matric No. already registered"
+        )
+
     new_user = User(
         matric_number=user_data.matric_number,
         first_name=user_data.firstname,
         last_name=user_data.lastname,
-        email=user_data.email,
-        password=hashed_pwd,
-        role="student"
+        email=email,
+        password=hash_password(user_data.password),
+        role="student",
     )
 
     db.add(new_user)
@@ -50,104 +73,160 @@ def register_user(user_data: UserCreate, db: Session = Depends(get_db)):
 
     return {"message": "User registered successfully", "user_id": new_user.user_id}
 
+
 @auth.post("/login")
 def login(request: UserSignin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == request.email).first()
-    
-    if not user or not verify_password(request.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    access_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
-                                       expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    refresh_token = create_access_token(data={"sub": user.email, "user_id": str(user.user_id)}, 
-                                        expires_delta=timedelta(days=7))
+    email = request.email.lower()
+    user = db.query(User).filter(func.lower(User.email) == email).first()
 
-    db_refresh_token = RefreshToken(user_id=user.user_id, token=refresh_token, 
-                                    expires_at=datetime.utcnow() + timedelta(days=7))
-    db.add(db_refresh_token)
+    if not user or not verify_password(request.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+
+    token_data = {"sub": user.email, "user_id": str(user.user_id)}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    db.add(
+        RefreshToken(
+            user_id=user.user_id,
+            token=refresh_token,
+            expires_at=datetime.utcnow()
+            + timedelta(days=get_settings().refresh_token_expire_days),
+        )
+    )
     db.commit()
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
+        "expires_in": get_settings().access_token_expire_minutes * 60,
         "user": {
+            "user_id": str(user.user_id),
             "matric_number": user.matric_number,
             "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
             "role": user.role,
-            "user_id": str(user.user_id)
-        }
+        },
     }
 
+
 @auth.get("/me")
-def get_current_user_details(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+def get_current_user_details(current_user: User = Depends(get_current_user)):
+    return {
+        "user_id": current_user.user_id,
+        "matric_number": current_user.matric_number,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+        "email": current_user.email,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+    }
+
+
+@auth.post("/refresh-token")
+def refresh_access_token(
+    request: RefreshTokenRequest,
+    db: Session = Depends(get_db),
 ):
-    payload = decode_access_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    payload = decode_token(request.refresh_token, expected_type="refresh")
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-    email = payload.get("sub")
-    user = db.query(User).filter(User.email == email).first()
+    stored_token = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.token == request.refresh_token)
+        .first()
+    )
+    if not stored_token or stored_token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired refresh token"
+        )
+    if (
+        db.query(RevokedToken)
+        .filter(RevokedToken.token == request.refresh_token)
+        .first()
+    ):
+        raise HTTPException(status_code=401, detail="Refresh token has been revoked")
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(status_code=401, detail="User not found or inactive")
+
+    token_data = {"sub": user.email, "user_id": str(user.user_id)}
+    new_access_token = create_access_token(token_data)
+    new_refresh_token = create_refresh_token(token_data)
+
+    db.delete(stored_token)
+    db.add(
+        RefreshToken(
+            user_id=user.user_id,
+            token=new_refresh_token,
+            expires_at=datetime.utcnow()
+            + timedelta(days=get_settings().refresh_token_expire_days),
+        )
+    )
+    db.add(
+        RevokedToken(
+            token=request.refresh_token,
+            expires_at=stored_token.expires_at,
+        )
+    )
+    db.commit()
 
     return {
-        "user_id": user.user_id,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "role": user.role
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer",
+        "expires_in": get_settings().access_token_expire_minutes * 60,
     }
 
 
 @auth.post("/logout")
 def logout(
-    background_tasks: BackgroundTasks,
+    request: Optional[LogoutRequest] = None,
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
-    decoded_token = decode_access_token(token)
-    
-    if not decoded_token:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    payload = decode_token(token, expected_type="access")
+    if not db.query(RevokedToken).filter(RevokedToken.token == token).first():
+        db.add(
+            RevokedToken(
+                token=token,
+                expires_at=_token_expiry(payload),
+            )
+        )
 
-    # Check if token is already revoked
-    existing_revoked = db.query(RevokedToken).filter(RevokedToken.token == token).first()
-    if existing_revoked:
-        raise HTTPException(status_code=400, detail="Token already revoked")
+    if request and request.refresh_token:
+        refresh_payload = decode_token(
+            request.refresh_token, expected_type="refresh"
+        )
+        stored_token = (
+            db.query(RefreshToken)
+            .filter(RefreshToken.token == request.refresh_token)
+            .first()
+        )
+        if stored_token:
+            db.delete(stored_token)
+        if not db.query(RevokedToken).filter(
+            RevokedToken.token == request.refresh_token
+        ).first():
+            db.add(
+                RevokedToken(
+                    token=request.refresh_token,
+                    expires_at=_token_expiry(refresh_payload),
+                )
+            )
 
-    # Store the token in the RevokedToken table
-    revoked_token = RevokedToken(
-    token=token, 
-    expires_at=datetime.fromtimestamp(decoded_token.get("exp"), tz=timezone.utc))
-    db.add(revoked_token)
     db.commit()
-
-    # Run cleanup in the background
-    background_tasks.add_task(cleanup_expired_tokens, db)
-
     return {"message": "Logged out successfully"}
-
-@auth.post("/refresh-token")
-def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-
-        if not email:
-            raise HTTPException(status_code=401, detail="Invalid token")
-
-        # Check if refresh token exists and is valid
-        stored_token = db.query(RefreshToken).filter(RefreshToken.token == refresh_token).first()
-        if not stored_token:
-            raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-
-        # Generate a new access token
-        new_access_token, _ = create_access_token(data={"sub": email})
-
-        return {"access_token": new_access_token, "token_type": "bearer"}
-    
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")

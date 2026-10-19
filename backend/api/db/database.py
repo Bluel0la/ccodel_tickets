@@ -1,32 +1,27 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
 
-load_dotenv(".env.config")
+from api.core.config import get_settings
 
 
 def get_db_engine():
-    DB_TYPE = os.getenv("DB_TYPE")
-    DB_NAME = os.getenv("DB_NAME")
-    DB_USER = os.getenv("DB_USER")
-    DB_PASSWORD = os.getenv("DB_PASSWORD")
-    DB_HOST = os.getenv("DB_HOST")
-    DB_PORT = os.getenv("DB_PORT")
+    settings = get_settings()
+    database_url = settings.sqlalchemy_url
+    if not database_url:
+        raise RuntimeError("DB_URL is not configured")
 
-    DATABASE_URL = os.getenv("DB_URL")
+    engine_options = {"pool_pre_ping": True}
+    if database_url.startswith("sqlite"):
+        engine_options["connect_args"] = {"check_same_thread": False}
+    else:
+        engine_options.update({"pool_size": 32, "max_overflow": 64})
 
-    # Create the engine based on the URL
-    db_engine = create_engine(DATABASE_URL, pool_size=32, max_overflow=64)
-
-    return db_engine
+    return create_engine(database_url, **engine_options)
 
 
-# Call get_db_engine to create the engine
 db_engine = get_db_engine()
 
-# Session and Base declaration
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 Base = declarative_base()
 

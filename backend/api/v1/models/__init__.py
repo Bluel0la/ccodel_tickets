@@ -4,3 +4,5 @@ from api.v1.models.tag import Tag
 from api.v1.models.attachement import Attachment
 from api.v1.models.history import TicketHistory
 from api.v1.models.comment import Comment
+from api.v1.models.refresh_tokens import RefreshToken
+from api.v1.models.revoked_tokens import RevokedToken

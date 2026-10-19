@@ -1,26 +1,32 @@
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
-from uuid import UUID
+
+from pydantic import BaseModel, EmailStr, Field
+
+from api.v1.schemas.UserRegister import RoleEnum
+
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = Field(None, example="John Doe")
-    last_name: Optional[str] = Field(None, example="John Doe")
-    email: Optional[EmailStr] = Field(None, example="john.doe@example.com")
-    is_active: Optional[bool] = Field(None, example=True)
-
+    first_name: Optional[str] = Field(None, min_length=1, max_length=50)
+    last_name: Optional[str] = Field(None, min_length=1, max_length=50)
+    matric_number: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    is_active: Optional[bool] = None
+    role: Optional[RoleEnum] = None
 
     class Config:
         from_attributes = True
 
-class ChangePassword(BaseModel):
-    old_password: str = Field(..., min_length=8, max_length=128, description="Current password of the user")
-    new_password: str = Field(
-    ...,
-    min_length=8,
-    pattern=r"^[A-Za-z\d]{8,}$",
-    description="New password (at least 8 characters, 1 letter, 1 number)"
-    )
 
+class ChangePassword(BaseModel):
+    old_password: str = Field(
+        ..., min_length=8, max_length=128, description="Current password"
+    )
+    new_password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128,
+        description="New password, at least 8 characters",
+    )
 
     class Config:
         from_attributes = True

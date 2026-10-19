@@ -29,3 +29,25 @@ class Ticket(Base):
     comments = relationship("Comment", back_populates="ticket", cascade="all, delete-orphan")
     history = relationship("TicketHistory", back_populates="ticket", order_by="TicketHistory.timestamp.desc()", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary="ticket_tags", back_populates="tickets")
+
+    @staticmethod
+    def _display_name(user):
+        if not user:
+            return None
+        return f"{user.first_name} {user.last_name}".strip()
+
+    @property
+    def created_by_name(self):
+        return self._display_name(self.created_by_user)
+
+    @property
+    def assigned_to_name(self):
+        return self._display_name(self.assigned_to_user)
+
+    @property
+    def closed_by_name(self):
+        return self._display_name(self.closed_by_user)
+
+    @property
+    def attachment_count(self):
+        return len(self.attachments) if self.attachments else 0

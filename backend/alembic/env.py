@@ -1,18 +1,19 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-from decouple import config as decouple_config
-import os, sys
-from dotenv import load_dotenv
+import os
+import sys
 
+from alembic import context
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
+
+load_dotenv(".env")
 load_dotenv(".env.config")
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../"))
 sys.path.append(project_root)
 
-from api.v1.models import *
 from api.db.database import Base
+from api.v1.models import *  # noqa: F401,F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -23,8 +24,6 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-
-print("Database URL:", os.getenv("DB_URL"))
 
 # Get the database URL from the environment variable
 database_url = os.getenv("DB_URL")
