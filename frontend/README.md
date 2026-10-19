@@ -1,7 +1,5 @@
+# CCODEL Tickets - Frontend Client
 
-# CCODEL_Tickets
-# Hiiiiii
-=======
 # Project Setup Guide
 
 ## Prerequisites
